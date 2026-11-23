@@ -88,6 +88,20 @@ int main(void) {
 
 ### Websockets
 
+WebSocket sends are synchronous and hold the connection's write lock until the
+frame finishes or fails. Non-blocking writes retry temporary backpressure;
+10 seconds without sending any bytes disconnects the connection and returns an
+error. Builds may override `U_WEBSOCKET_WRITE_IDLE_SECONDS`. Each successful
+write resets this idle timer, so it is not a total delivery deadline: a slowly
+reading peer can keep a send active for longer. Avoid holding application-wide
+locks across sends.
+
+A close request cancels a write when it stalls; successful partial writes may
+finish so a graceful CLOSE frame can follow. The idle timer cannot interrupt a
+blocking system or TLS write. Ulfius client sockets currently remain blocking,
+so this change does not provide a bounded client-send or client-shutdown time.
+
+
 - Create a websocket service application
 
 - Create websocket client application

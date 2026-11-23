@@ -172,6 +172,29 @@ START_TEST(test_ulfius_websocket_partial_write_shutdown)
 }
 END_TEST
 
+START_TEST(test_ulfius_websocket_pending_close_frame)
+{
+        struct _websocket_manager manager = {0};
+        int sockets[2];
+        uint8_t received[2];
+
+        ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+        manager.type = U_WEBSOCKET_SERVER;
+        manager.connected = 1;
+        manager.close_flag = 1;
+        manager.mhd_sock = sockets[0];
+        ck_assert_int_eq(pthread_mutex_init(&manager.write_lock, NULL), 0);
+        ck_assert_int_eq(ulfius_websocket_send_message(&manager,
+                U_WEBSOCKET_OPCODE_CLOSE, 0, NULL), U_OK);
+        ck_assert_int_eq(recv(sockets[1], received, sizeof(received), MSG_WAITALL), 2);
+        ck_assert_int_eq(received[0], 0x88);
+        ck_assert_int_eq(received[1], 0);
+        close(sockets[0]);
+        close(sockets[1]);
+        pthread_mutex_destroy(&manager.write_lock);
+}
+END_TEST
+
 void websocket_manager_callback_empty (const struct _u_request * request, struct _websocket_manager * websocket_manager, void * websocket_manager_user_data) {
   UNUSED(request);
   UNUSED(websocket_manager);
@@ -1414,6 +1437,7 @@ static Suite *ulfius_suite(void)
   tcase_add_test(tc_websocket, test_ulfius_websocket_backpressure);
   tcase_add_test(tc_websocket, test_ulfius_websocket_partial_write_disconnect);
   tcase_add_test(tc_websocket, test_ulfius_websocket_partial_write_shutdown);
+  tcase_add_test(tc_websocket, test_ulfius_websocket_pending_close_frame);
   tcase_add_test(tc_websocket, test_ulfius_websocket_set_websocket_response);
 	tcase_add_test(tc_websocket, test_ulfius_websocket_set_websocket_request);
 	tcase_add_test(tc_websocket, test_ulfius_websocket_open_websocket_client_connection_error);

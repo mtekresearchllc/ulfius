@@ -50,7 +50,9 @@
 #include <time.h>
 
 // maximum time without sending any frame bytes
+#ifndef U_WEBSOCKET_WRITE_IDLE_SECONDS
 #define U_WEBSOCKET_WRITE_IDLE_SECONDS 10
+#endif
 
 #include "yuarel.h"
 
@@ -148,7 +150,7 @@ static int ulfius_websocket_send_frame(struct _websocket_manager * websocket_man
 {
         size_t offset = 0;
         ssize_t written;
-        int ready, attempted = 0;
+        int ready;
         struct pollfd output = {0};
         struct timespec last_progress, now;
         const char *reason = "connection closed or write failed";
@@ -165,11 +167,6 @@ static int ulfius_websocket_send_frame(struct _websocket_manager * websocket_man
                 return U_ERROR;
         }
         while (websocket_manager->connected && offset < len) {
-                // allow the initial attempt to send a graceful close frame
-                if (attempted && websocket_manager->close_flag) {
-                        reason = "shutdown requested";
-                        break;
-                }
                 if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) {
                         reason = "write timer failed";
                         break;
@@ -180,7 +177,6 @@ static int ulfius_websocket_send_frame(struct _websocket_manager * websocket_man
                         reason = "no write progress for " STR(U_WEBSOCKET_WRITE_IDLE_SECONDS) " seconds";
                         break;
                 }
-                attempted = 1;
                 ready = poll(&output, 1, U_WEBSOCKET_USEC_WAIT);
                 if (ready < 0 && errno == EINTR) {
                         continue;
@@ -189,7 +185,11 @@ static int ulfius_websocket_send_frame(struct _websocket_manager * websocket_man
                         break;
                 }
                 if (!ready) {
-                        // a polling interval is not a frame delivery deadline
+                        // cancel a stalled write, not a frame that is making progress
+                        if (websocket_manager->close_flag) {
+                                reason = "shutdown requested";
+                                break;
+                        }
                         continue;
                 }
                 if (!(output.revents & output.events)) {
@@ -199,6 +199,10 @@ static int ulfius_websocket_send_frame(struct _websocket_manager * websocket_man
                         written = gnutls_record_send(websocket_manager->gnutls_session,
                                                      data + offset, len - offset);
                         if (written == GNUTLS_E_AGAIN || written == GNUTLS_E_INTERRUPTED) {
+                                if (websocket_manager->close_flag) {
+                                        reason = "shutdown requested";
+                                        break;
+                                }
                                 output.events = gnutls_record_get_direction(
                                         websocket_manager->gnutls_session) ? POLLOUT : POLLIN;
                                 continue;
@@ -207,6 +211,10 @@ static int ulfius_websocket_send_frame(struct _websocket_manager * websocket_man
                         written = send(output.fd, data + offset, len - offset, MSG_NOSIGNAL);
                         if (written < 0 && (errno == EINTR || errno == EAGAIN ||
                                             errno == EWOULDBLOCK)) {
+                                if (websocket_manager->close_flag) {
+                                        reason = "shutdown requested";
+                                        break;
+                                }
                                 continue;
                         }
                 }
