@@ -22,6 +22,7 @@
  */
 
 #include <getopt.h>
+#include "u_string.h"
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
@@ -80,7 +81,7 @@ static char * read_file(const char * filename, size_t * filesize) {
         *filesize = length;
       }
       fseek (f, 0, SEEK_SET);
-      buffer = o_malloc (length + 1);
+      buffer = ulfius_malloc (length + 1);
       if (buffer != NULL) {
         if (fread (buffer, 1, length, f)) {
           buffer[length] = '\0';
@@ -113,7 +114,7 @@ static void uwsc_manager_callback (const struct _u_request * request, struct _we
     } else {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Error reading file %s", config->text_file_send);
     }
-    o_free(file_content);
+    u_free(file_content);
   } else if (config->binary_file_send != NULL) {
     file_content = read_file(config->binary_file_send, &file_len);
     if (file_content != NULL && file_len > 0) {
@@ -123,13 +124,13 @@ static void uwsc_manager_callback (const struct _u_request * request, struct _we
     } else {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Error reading file %s", config->binary_file_send);
     }
-    o_free(file_content);
+    u_free(file_content);
   }
   if (!config->non_interactive) {
     do {
       if (fgets(message, 256, stdin) != NULL) {
-        if (o_strlen(message)) {
-          if (0 == o_strncmp(message, "!q", o_strlen("!q"))) {
+        if (u_strlen(message)) {
+          if (0 == u_strncmp(message, "!q", u_strlen("!q"))) {
             if (!config->quiet) {
               fprintf(stdout, "\b\bQuit uwsc\n");
             }
@@ -138,16 +139,16 @@ static void uwsc_manager_callback (const struct _u_request * request, struct _we
             }
           } else {
             if (!config->quiet) {
-              fprintf(stdout, "\b\bSend '%.*s'\n> ", (int)(o_strlen(message)-1), message);
+              fprintf(stdout, "\b\bSend '%.*s'\n> ", (int)(u_strlen(message)-1), message);
               fflush(stdout);
             }
-            if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(message)-1, message) != U_OK) {
-              ulfius_log_message(ULFIUS_LOG_ERROR, "Error sending message '%.*s'", (int)(o_strlen(message)-1), message);
+            if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(message)-1, message) != U_OK) {
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Error sending message '%.*s'", (int)(u_strlen(message)-1), message);
             }
           }
         }
       }
-    } while (o_strncmp(message, "!q", o_strlen("!q")) != 0 && ulfius_websocket_status(websocket_manager) == U_WEBSOCKET_STATUS_OPEN);
+    } while (u_strncmp(message, "!q", u_strlen("!q")) != 0 && ulfius_websocket_status(websocket_manager) == U_WEBSOCKET_STATUS_OPEN);
   } else {
     while (ulfius_websocket_wait_close(websocket_manager, 50) == U_WEBSOCKET_STATUS_OPEN);
   }
@@ -231,10 +232,10 @@ static int init_config(struct _config * config) {
     config->extensions = NULL;
     config->request = NULL;
     config->response = NULL;
-    if ((config->request = o_malloc(sizeof(struct _u_request))) == NULL) {
+    if ((config->request = ulfius_malloc(sizeof(struct _u_request))) == NULL) {
       return 0;
     }
-    if ((config->response = o_malloc(sizeof(struct _u_response))) == NULL) {
+    if ((config->response = ulfius_malloc(sizeof(struct _u_response))) == NULL) {
       return 0;
     }
     if (ulfius_init_request(config->request) != U_OK) {
@@ -256,14 +257,14 @@ static void exit_program(struct _config ** config, int exit_value) {
         fclose((*config)->log_file);
       }
     }
-    o_free((*config)->log_path);
-    o_free((*config)->binary_file_send);
-    o_free((*config)->text_file_send);
-    o_free((*config)->protocol);
-    o_free((*config)->extensions);
+    u_free((*config)->log_path);
+    u_free((*config)->binary_file_send);
+    u_free((*config)->text_file_send);
+    u_free((*config)->protocol);
+    u_free((*config)->extensions);
     ulfius_clean_request_full((*config)->request);
     ulfius_clean_response_full((*config)->response);
-    o_free(*config);
+    u_free(*config);
   }
   exit(exit_value);
 }
@@ -297,7 +298,7 @@ int main (int argc, char ** argv) {
   my_ignorance.sa_flags = SA_RESTART;
 
   sigaction(SIGPIPE, &my_ignorance, NULL);
-  config = o_malloc(sizeof(struct _config));
+  config = ulfius_malloc(sizeof(struct _config));
   if (config == NULL || !init_config(config)) {
     fprintf(stderr, "Error initialize configuration\n");
     exit_program(NULL, 1);
@@ -311,13 +312,13 @@ int main (int argc, char ** argv) {
 
     switch (next_option) {
       case 'o':
-        config->log_path = o_strdup(optarg);
+        config->log_path = u_strdup(optarg);
         break;
       case 'x':
-        if (NULL != (value = o_strchr(optarg, ':'))) {
-          key = o_strndup(optarg, (size_t)(value-optarg));
+        if (NULL != (value = u_strchr(optarg, ':'))) {
+          key = u_strndup(optarg, (size_t)(value-optarg));
           u_map_put(config->request->map_header, key, value+1);
-          o_free(key);
+          u_free(key);
         } else {
           fprintf(stderr, "Error, a header value must have the following format: <key>:<value>\n\nuse uwsc -h for help\n");
           exit_program(&config, 1);
@@ -329,14 +330,14 @@ int main (int argc, char ** argv) {
           fprintf(stderr, "Error, you can't send a binary file and a text file\n\nuse uwsc -h for help\n");
           exit_program(&config, 1);
         }
-        config->binary_file_send = o_strdup(optarg);
+        config->binary_file_send = u_strdup(optarg);
         break;
       case 't':
         if (config->binary_file_send != NULL) {
           fprintf(stderr, "Error, you can't send a binary file and a text file\n\nuse uwsc -h for help\n");
           exit_program(&config, 1);
         }
-        config->text_file_send = o_strdup(optarg);
+        config->text_file_send = u_strdup(optarg);
         break;
       case 'i':
         config->non_interactive = 1;
@@ -348,10 +349,10 @@ int main (int argc, char ** argv) {
         config->fragmentation = (unsigned int)strtol(optarg, NULL, 10);
         break;
       case 'p':
-        config->protocol = o_strdup(optarg);
+        config->protocol = u_strdup(optarg);
         break;
       case 'e':
-        config->extensions = o_strdup(optarg);
+        config->extensions = u_strdup(optarg);
         break;
       case 's':
         config->request->check_server_certificate = 0;
@@ -395,10 +396,10 @@ int main (int argc, char ** argv) {
     exit_program(&config, 1);
   }
 
-  if (!o_strlen(config->extensions)) {
-    extensions = o_strdup("permessage-deflate");
+  if (!u_strlen(config->extensions)) {
+    extensions = u_strdup("permessage-deflate");
   } else {
-    extensions = msprintf("%s,permessage-deflate", config->extensions);
+    extensions = u_printf("%s,permessage-deflate", config->extensions);
   }
   if (ulfius_set_websocket_request(config->request, url, config->protocol, extensions) == U_OK) {
     if (ulfius_add_websocket_client_deflate_extension(&websocket_client_handler) == U_OK) {
@@ -433,7 +434,7 @@ int main (int argc, char ** argv) {
     fprintf(stderr, "Error ulfius_add_websocket_client_deflate_extension\n");
     ulfius_log_message(ULFIUS_LOG_ERROR, "Error initializing websocket request");
   }
-  o_free(extensions);
+  u_free(extensions);
 
   exit_program(&config, 0);
   return 0;

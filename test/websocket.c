@@ -1,6 +1,7 @@
 /* Public domain, no copyright. Use at your own risk. */
 
 #include <check.h>
+#include "u_string.h"
 #include <errno.h>
 #include <fcntl.h>
 #include <sys/socket.h>
@@ -194,12 +195,14 @@ START_TEST(test_ulfius_websocket_pending_close_frame)
 END_TEST
 
 static pthread_mutex_t * registry_lock;
+static int fail_registry_allocation;
 
 static void * fail_registry_resize(void * ptr, size_t size) {
-  UNUSED(ptr);
-  UNUSED(size);
-  ck_assert_int_eq(pthread_mutex_trylock(registry_lock), EBUSY);
-  return NULL;
+  if (fail_registry_allocation) {
+    ck_assert_int_eq(pthread_mutex_trylock(registry_lock), EBUSY);
+    return NULL;
+  }
+  return realloc(ptr, size);
 }
 
 START_TEST(test_ulfius_websocket_registry_allocation_failure)
@@ -209,26 +212,22 @@ START_TEST(test_ulfius_websocket_registry_allocation_failure)
                                        .websocket_close_cond = PTHREAD_COND_INITIALIZER};
   struct _u_instance instance = {.websocket_handler = &handler};
   struct _websocket first = {0}, second = {0};
-  o_malloc_t malloc_fn;
-  o_realloc_t realloc_fn;
-  o_free_t free_fn;
   int ret;
 
   registry_lock = &handler.websocket_active_lock;
   ck_assert_int_eq(ulfius_instance_add_websocket_active(&instance, &first), U_OK);
-  o_get_alloc_funcs(&malloc_fn, &realloc_fn, &free_fn);
-  o_set_alloc_funcs(malloc_fn, fail_registry_resize, free_fn);
+  fail_registry_allocation = 1;
   ret = ulfius_instance_add_websocket_active(&instance, &second);
-  o_set_alloc_funcs(malloc_fn, realloc_fn, free_fn);
+  fail_registry_allocation = 0;
   ck_assert_int_eq(ret, U_ERROR_MEMORY);
   ck_assert_uint_eq(handler.nb_websocket_active, 1);
   ck_assert_ptr_nonnull(handler.websocket_active);
   ck_assert_ptr_eq(handler.websocket_active[0], &first);
 
   ck_assert_int_eq(ulfius_instance_add_websocket_active(&instance, &second), U_OK);
-  o_set_alloc_funcs(malloc_fn, fail_registry_resize, free_fn);
+  fail_registry_allocation = 1;
   ret = ulfius_instance_remove_websocket_active(&instance, &first);
-  o_set_alloc_funcs(malloc_fn, realloc_fn, free_fn);
+  fail_registry_allocation = 0;
   ck_assert_int_eq(ret, U_OK);
   ck_assert_uint_eq(handler.nb_websocket_active, 1);
   ck_assert_ptr_nonnull(handler.websocket_active);
@@ -284,16 +283,16 @@ void websocket_origin_callback (const struct _u_request * request,
                                    void * websocket_incoming_message_user_data) {
   UNUSED(request);
   if (websocket_incoming_message_user_data != NULL) {
-    ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen((char *)websocket_incoming_message_user_data), (char *)websocket_incoming_message_user_data);
+    ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen((char *)websocket_incoming_message_user_data), (char *)websocket_incoming_message_user_data);
   } else {
-    ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(NO_ORIGIN), NO_ORIGIN);
+    ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(NO_ORIGIN), NO_ORIGIN);
   }
 }
 
 void websocket_onclose_message_callback (const struct _u_request * request, struct _websocket_manager * websocket_manager, void * websocket_onclose_user_data) {
   UNUSED(request);
   UNUSED(websocket_manager);
-  o_free(websocket_onclose_user_data);
+  u_free(websocket_onclose_user_data);
 }
 
 void websocket_manager_callback_client (const struct _u_request * request, struct _websocket_manager * websocket_manager, void * websocket_manager_user_data) {
@@ -304,9 +303,9 @@ void websocket_manager_callback_client (const struct _u_request * request, struc
   for (i=0; i<4; i++) {
     if (ulfius_websocket_wait_close(websocket_manager, 50) == U_WEBSOCKET_STATUS_OPEN) {
       if (i%2) {
-        ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(DEFAULT_MESSAGE), DEFAULT_MESSAGE), U_OK);
+        ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(DEFAULT_MESSAGE), DEFAULT_MESSAGE), U_OK);
       } else {
-        ck_assert_int_eq(ulfius_websocket_send_fragmented_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(DEFAULT_MESSAGE), DEFAULT_MESSAGE, (o_strlen(DEFAULT_MESSAGE)/4)), U_OK);
+        ck_assert_int_eq(ulfius_websocket_send_fragmented_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(DEFAULT_MESSAGE), DEFAULT_MESSAGE, (u_strlen(DEFAULT_MESSAGE)/4)), U_OK);
       }
     }
   }
@@ -315,9 +314,9 @@ void websocket_manager_callback_client (const struct _u_request * request, struc
 void websocket_extension_callback_client (const struct _u_request * request, struct _websocket_manager * websocket_manager, void * websocket_manager_user_data) {
   UNUSED(request);
   UNUSED(websocket_manager_user_data);
-  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_CLIENT), MESSAGE_CLIENT), U_OK);
+  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(MESSAGE_CLIENT), MESSAGE_CLIENT), U_OK);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "client message 1 '%s' sent", MESSAGE_CLIENT);
-  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_CLIENT), MESSAGE_CLIENT), U_OK);
+  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(MESSAGE_CLIENT), MESSAGE_CLIENT), U_OK);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "client message 2 '%s' sent", MESSAGE_CLIENT);
   if (ulfius_websocket_wait_close(websocket_manager, 50) == U_WEBSOCKET_STATUS_OPEN) {
     ck_assert_int_eq(ulfius_websocket_send_close_signal(websocket_manager), U_OK);
@@ -328,7 +327,7 @@ void websocket_incoming_message_callback_client (const struct _u_request * reque
   UNUSED(request);
   UNUSED(websocket_manager);
   UNUSED(websocket_incoming_user_data);
-  ck_assert_int_eq(0, o_strncmp(message->data, DEFAULT_MESSAGE, message->data_len));
+  ck_assert_int_eq(0, u_strncmp(message->data, DEFAULT_MESSAGE, message->data_len));
 }
 
 void websocket_incoming_json_valid_messages (const struct _u_request * request, struct _websocket_manager * websocket_manager, const struct _websocket_message * message, void * websocket_incoming_user_data) {
@@ -379,8 +378,8 @@ void websocket_manager_json_valid_callback(const struct _u_request * request, st
   UNUSED(websocket_manager_user_data);
   
   ck_assert_int_eq(ulfius_websocket_send_json_message(websocket_manager, j_message), U_OK);
-  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(str_message), str_message), U_OK);
-  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_BINARY, o_strlen(str_message), str_message), U_OK);
+  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(str_message), str_message), U_OK);
+  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_BINARY, u_strlen(str_message), str_message), U_OK);
 
   json_decref(j_message);
 }
@@ -388,8 +387,8 @@ void websocket_manager_json_valid_callback(const struct _u_request * request, st
 void websocket_manager_json_invalid_callback(const struct _u_request * request, struct _websocket_manager * websocket_manager, void * websocket_manager_user_data) {
   UNUSED(request);
   UNUSED(websocket_manager_user_data);
-  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(DEFAULT_MESSAGE), DEFAULT_MESSAGE), U_OK);
-  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_BINARY, o_strlen(DEFAULT_MESSAGE), DEFAULT_MESSAGE), U_OK);
+  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(DEFAULT_MESSAGE), DEFAULT_MESSAGE), U_OK);
+  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_BINARY, u_strlen(DEFAULT_MESSAGE), DEFAULT_MESSAGE), U_OK);
 }
 
 void websocket_manager_json_empty_callback(const struct _u_request * request, struct _websocket_manager * websocket_manager, void * websocket_manager_user_data) {
@@ -404,30 +403,30 @@ void websocket_incoming_message_without_origin_callback_client (const struct _u_
   UNUSED(request);
   UNUSED(websocket_manager);
   UNUSED(websocket_incoming_user_data);
-  ck_assert_int_eq(0, o_strncmp(message->data, NO_ORIGIN, message->data_len));
+  ck_assert_int_eq(0, u_strncmp(message->data, NO_ORIGIN, message->data_len));
 }
 
 void websocket_incoming_message_with_origin_callback_client (const struct _u_request * request, struct _websocket_manager * websocket_manager, const struct _websocket_message * message, void * websocket_incoming_user_data) {
   UNUSED(request);
   UNUSED(websocket_manager);
   UNUSED(websocket_incoming_user_data);
-  ck_assert_int_eq(0, o_strncmp(message->data, ORIGIN, message->data_len));
+  ck_assert_int_eq(0, u_strncmp(message->data, ORIGIN, message->data_len));
 }
 
 void websocket_manager_extension_callback (const struct _u_request * request, struct _websocket_manager * websocket_manager, void * websocket_manager_user_data) {
   UNUSED(request);
   UNUSED(websocket_manager_user_data);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "server message '%s' sent", MESSAGE_SERVER);
-  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_SERVER), MESSAGE_SERVER), U_OK);
+  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(MESSAGE_SERVER), MESSAGE_SERVER), U_OK);
   while (ulfius_websocket_wait_close(websocket_manager, 50) == U_WEBSOCKET_STATUS_OPEN);
 }
 
 void websocket_manager_extension_deflate_callback (const struct _u_request * request, struct _websocket_manager * websocket_manager, void * websocket_manager_user_data) {
   UNUSED(request);
   UNUSED(websocket_manager_user_data);
-  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_SERVER), MESSAGE_SERVER), U_OK);
+  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(MESSAGE_SERVER), MESSAGE_SERVER), U_OK);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "server message 1 sent");
-  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_SERVER), MESSAGE_SERVER), U_OK);
+  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(MESSAGE_SERVER), MESSAGE_SERVER), U_OK);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "server message 2 sent");
   while (ulfius_websocket_wait_close(websocket_manager, 50) == U_WEBSOCKET_STATUS_OPEN);
 }
@@ -441,18 +440,18 @@ void websocket_incoming_extension_callback (const struct _u_request * request,
   UNUSED(websocket_manager);
   
   if (last_message->opcode == U_WEBSOCKET_OPCODE_TEXT || last_message->opcode == U_WEBSOCKET_OPCODE_BINARY) {
-    ck_assert_ptr_ne(NULL, o_strnstr(last_message->data, MESSAGE, last_message->data_len));
+    ck_assert_ptr_ne(NULL, u_strnstr(last_message->data, MESSAGE, last_message->data_len));
     if ((*rsv)&U_WEBSOCKET_RSV1) {
       ck_assert_int_ne(last_message->rsv&U_WEBSOCKET_RSV1, 0);
-      ck_assert_ptr_ne(NULL, o_strnstr(last_message->data, MESSAGE_EXT1, last_message->data_len));
+      ck_assert_ptr_ne(NULL, u_strnstr(last_message->data, MESSAGE_EXT1, last_message->data_len));
     }
     if ((*rsv)&U_WEBSOCKET_RSV2) {
       ck_assert_int_ne(last_message->rsv&U_WEBSOCKET_RSV2, 0);
-      ck_assert_ptr_ne(NULL, o_strnstr(last_message->data, MESSAGE_EXT2, last_message->data_len));
+      ck_assert_ptr_ne(NULL, u_strnstr(last_message->data, MESSAGE_EXT2, last_message->data_len));
     }
     if ((*rsv)&U_WEBSOCKET_RSV3) {
       ck_assert_int_ne(last_message->rsv&U_WEBSOCKET_RSV3, 0);
-      ck_assert_ptr_ne(NULL, o_strnstr(last_message->data, MESSAGE_EXT3, last_message->data_len));
+      ck_assert_ptr_ne(NULL, u_strnstr(last_message->data, MESSAGE_EXT3, last_message->data_len));
     }
   }
 }
@@ -464,7 +463,7 @@ void websocket_incoming_extension_deflate_client_callback (const struct _u_reque
   UNUSED(request);
   UNUSED(websocket_manager);
   UNUSED(user_data);
-  ck_assert_int_eq(0, o_strncmp(last_message->data, MESSAGE_SERVER, last_message->data_len));
+  ck_assert_int_eq(0, u_strncmp(last_message->data, MESSAGE_SERVER, last_message->data_len));
   if (last_message->opcode == U_WEBSOCKET_OPCODE_TEXT || last_message->opcode == U_WEBSOCKET_OPCODE_BINARY) {
     ck_assert_int_ne(last_message->rsv&U_WEBSOCKET_RSV1, 0);
   }
@@ -477,7 +476,7 @@ void websocket_incoming_extension_deflate_client_callback_disabled (const struct
   UNUSED(request);
   UNUSED(websocket_manager);
   UNUSED(user_data);
-  ck_assert_int_eq(0, o_strncmp(last_message->data, MESSAGE_SERVER, last_message->data_len));
+  ck_assert_int_eq(0, u_strncmp(last_message->data, MESSAGE_SERVER, last_message->data_len));
   ck_assert_int_eq(last_message->rsv&U_WEBSOCKET_RSV1, 0);
 }
 
@@ -488,7 +487,7 @@ void websocket_incoming_extension_deflate_server_callback (const struct _u_reque
   UNUSED(request);
   UNUSED(websocket_manager);
   UNUSED(user_data);
-  ck_assert_int_eq(0, o_strncmp(last_message->data, MESSAGE_CLIENT, last_message->data_len));
+  ck_assert_int_eq(0, u_strncmp(last_message->data, MESSAGE_CLIENT, last_message->data_len));
   if (last_message->opcode == U_WEBSOCKET_OPCODE_TEXT || last_message->opcode == U_WEBSOCKET_OPCODE_BINARY) {
     ck_assert_int_ne(last_message->rsv&U_WEBSOCKET_RSV1, 0);
   }
@@ -501,7 +500,7 @@ void websocket_incoming_extension_deflate_server_callback_disabled (const struct
   UNUSED(request);
   UNUSED(websocket_manager);
   UNUSED(user_data);
-  ck_assert_int_eq(0, o_strncmp(last_message->data, MESSAGE_CLIENT, last_message->data_len));
+  ck_assert_int_eq(0, u_strncmp(last_message->data, MESSAGE_CLIENT, last_message->data_len));
   ck_assert_int_eq(last_message->rsv&U_WEBSOCKET_RSV1, 0);
 }
 
@@ -511,7 +510,7 @@ void websocket_manager_callback_keep_messages (const struct _u_request * request
   if (websocket_manager_user_data != NULL) {
     websocket_manager->keep_messages = *((int*)(websocket_manager_user_data));
   }
-  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_EXT1), MESSAGE_EXT1), U_OK);
+  ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(MESSAGE_EXT1), MESSAGE_EXT1), U_OK);
   
   while (ulfius_websocket_wait_close(websocket_manager, 50) == U_WEBSOCKET_STATUS_OPEN);
 }
@@ -522,13 +521,13 @@ void websocket_incoming_keep_messages (const struct _u_request * request,
                                        void * user_data) {
   UNUSED(request);
   UNUSED(user_data);
-  if (0 == o_strncmp(MESSAGE_EXT1, last_message->data, last_message->data_len)) {
-    ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_EXT2), MESSAGE_EXT2), U_OK);
-  } else if (0 == o_strncmp(MESSAGE_EXT2, last_message->data, last_message->data_len)) {
-    ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_EXT3), MESSAGE_EXT3), U_OK);
-  } else if (0 == o_strncmp(MESSAGE_EXT3, last_message->data, last_message->data_len)) {
-    ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_EXT4), MESSAGE_EXT4), U_OK);
-  } else if (0 == o_strncmp(MESSAGE_EXT4, last_message->data, last_message->data_len)) {
+  if (0 == u_strncmp(MESSAGE_EXT1, last_message->data, last_message->data_len)) {
+    ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(MESSAGE_EXT2), MESSAGE_EXT2), U_OK);
+  } else if (0 == u_strncmp(MESSAGE_EXT2, last_message->data, last_message->data_len)) {
+    ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(MESSAGE_EXT3), MESSAGE_EXT3), U_OK);
+  } else if (0 == u_strncmp(MESSAGE_EXT3, last_message->data, last_message->data_len)) {
+    ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(MESSAGE_EXT4), MESSAGE_EXT4), U_OK);
+  } else if (0 == u_strncmp(MESSAGE_EXT4, last_message->data, last_message->data_len)) {
     ck_assert_int_eq(ulfius_websocket_send_close_signal(websocket_manager), U_OK);
   }
 }
@@ -552,7 +551,7 @@ void websocket_onclose_callback_keep_messages (const struct _u_request * request
 void websocket_origin_onclose_callback (const struct _u_request * request, struct _websocket_manager * websocket_manager, void * websocket_onclose_user_data) {
   UNUSED(request);
   UNUSED(websocket_manager);
-  o_free(websocket_onclose_user_data);
+  u_free(websocket_onclose_user_data);
 }
 
 int websocket_extension1_message_out_perform(const uint8_t opcode, const uint64_t data_len_in, const char * data_in, uint64_t * data_len_out, char ** data_out, const uint64_t fragment_len, void * user_data, void * context) {
@@ -564,9 +563,9 @@ int websocket_extension1_message_out_perform(const uint8_t opcode, const uint64_
   if (((uintptr_t)user_data)&U_W_FLAG_CONTEXT) {
     ck_assert_ptr_ne(context, NULL);
   }
-  *data_out = msprintf("%.*s%s", (int)data_len_in, data_in, MESSAGE_EXT1);
+  *data_out = u_printf("%.*s%s", (int)data_len_in, data_in, MESSAGE_EXT1);
   ck_assert_ptr_ne(*data_out, NULL);
-  *data_len_out = o_strlen(*data_out);
+  *data_len_out = u_strlen(*data_out);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "inside websocket_extension1_message_out_perform");
   return U_OK;
 }
@@ -580,8 +579,8 @@ int websocket_extension1_message_in_perform(const uint8_t opcode, const uint64_t
   if (((uintptr_t)user_data)&U_W_FLAG_CONTEXT) {
     ck_assert_ptr_ne(context, NULL);
   }
-  *data_out = msprintf("%.*s%s", (int)data_len_in, data_in, MESSAGE_EXT1);
-  *data_len_out = o_strlen(*data_out);
+  *data_out = u_printf("%.*s%s", (int)data_len_in, data_in, MESSAGE_EXT1);
+  *data_len_out = u_strlen(*data_out);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "inside websocket_extension1_message_in_perform: '%.*s'", (int)data_len_in, data_in);
   return U_OK;
 }
@@ -595,8 +594,8 @@ int websocket_extension2_message_out_perform(const uint8_t opcode, const uint64_
   if (((uintptr_t)user_data)&U_W_FLAG_CONTEXT) {
     ck_assert_ptr_ne(context, NULL);
   }
-  *data_out = msprintf("%.*s%s", (int)data_len_in, data_in, MESSAGE_EXT2);
-  *data_len_out = o_strlen(*data_out);
+  *data_out = u_printf("%.*s%s", (int)data_len_in, data_in, MESSAGE_EXT2);
+  *data_len_out = u_strlen(*data_out);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "inside websocket_extension2_message_out_perform");
   return U_OK;
 }
@@ -610,8 +609,8 @@ int websocket_extension2_message_in_perform(const uint8_t opcode, const uint64_t
   if (((uintptr_t)user_data)&U_W_FLAG_CONTEXT) {
     ck_assert_ptr_ne(context, NULL);
   }
-  *data_out = msprintf("%.*s%s", (int)data_len_in, data_in, MESSAGE_EXT2);
-  *data_len_out = o_strlen(*data_out);
+  *data_out = u_printf("%.*s%s", (int)data_len_in, data_in, MESSAGE_EXT2);
+  *data_len_out = u_strlen(*data_out);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "inside websocket_extension2_message_in_perform");
   return U_OK;
 }
@@ -621,10 +620,10 @@ int websocket_extension3_message_out_perform(const uint8_t opcode, const uint64_
   UNUSED(fragment_len);
   UNUSED(user_data);
   UNUSED(context);
-  if (o_strlen(MESSAGE_SERVER) == data_len_in) {
-    ck_assert_int_ne(0, memcmp(MESSAGE_SERVER, data_in, MIN(data_len_in, o_strlen(MESSAGE_SERVER))));
+  if (u_strlen(MESSAGE_SERVER) == data_len_in) {
+    ck_assert_int_ne(0, memcmp(MESSAGE_SERVER, data_in, MIN(data_len_in, u_strlen(MESSAGE_SERVER))));
   }
-  *data_out = o_malloc(data_len_in);
+  *data_out = ulfius_malloc(data_len_in);
   memcpy(*data_out, data_in, data_len_in);
   *data_len_out = data_len_in;
   return U_OK;
@@ -635,10 +634,10 @@ int websocket_extension3_message_in_perform(const uint8_t opcode, const uint64_t
   UNUSED(fragment_len);
   UNUSED(user_data);
   UNUSED(context);
-  if (o_strlen(MESSAGE_SERVER) == data_len_in) {
-    ck_assert_int_ne(0, memcmp(MESSAGE_SERVER, data_in, MIN(data_len_in, o_strlen(MESSAGE_SERVER))));
+  if (u_strlen(MESSAGE_SERVER) == data_len_in) {
+    ck_assert_int_ne(0, memcmp(MESSAGE_SERVER, data_in, MIN(data_len_in, u_strlen(MESSAGE_SERVER))));
   }
-  *data_out = o_malloc(data_len_in);
+  *data_out = ulfius_malloc(data_len_in);
   memcpy(*data_out, data_in, data_len_in);
   *data_len_out = data_len_in;
   return U_OK;
@@ -649,9 +648,9 @@ int websocket_extension4_message_out_perform(const uint8_t opcode, const uint64_
   UNUSED(fragment_len);
   UNUSED(user_data);
   UNUSED(context);
-  ck_assert_int_eq(o_strlen(MESSAGE_SERVER), data_len_in);
-  ck_assert_int_eq(0, memcmp(MESSAGE_SERVER, data_in, MIN(data_len_in, o_strlen(MESSAGE_SERVER))));
-  *data_out = o_malloc(data_len_in);
+  ck_assert_int_eq(u_strlen(MESSAGE_SERVER), data_len_in);
+  ck_assert_int_eq(0, memcmp(MESSAGE_SERVER, data_in, MIN(data_len_in, u_strlen(MESSAGE_SERVER))));
+  *data_out = ulfius_malloc(data_len_in);
   memcpy(*data_out, data_in, data_len_in);
   *data_len_out = data_len_in;
   return U_OK;
@@ -662,9 +661,9 @@ int websocket_extension4_message_in_perform(const uint8_t opcode, const uint64_t
   UNUSED(fragment_len);
   UNUSED(user_data);
   UNUSED(context);
-  ck_assert_int_eq(o_strlen(MESSAGE_SERVER), data_len_in);
-  ck_assert_int_eq(0, memcmp(MESSAGE_SERVER, data_in, MIN(data_len_in, o_strlen(MESSAGE_SERVER))));
-  *data_out = o_malloc(data_len_in);
+  ck_assert_int_eq(u_strlen(MESSAGE_SERVER), data_len_in);
+  ck_assert_int_eq(0, memcmp(MESSAGE_SERVER, data_in, MIN(data_len_in, u_strlen(MESSAGE_SERVER))));
+  *data_out = ulfius_malloc(data_len_in);
   memcpy(*data_out, data_in, data_len_in);
   *data_len_out = data_len_in;
   return U_OK;
@@ -672,7 +671,7 @@ int websocket_extension4_message_in_perform(const uint8_t opcode, const uint64_t
 
 int callback_websocket (const struct _u_request * request, struct _u_response * response, void * user_data) {
   int ret;
-  char * websocket_allocated_data = o_strdup("grut");
+  char * websocket_allocated_data = u_strdup("grut");
   UNUSED(request);
   UNUSED(user_data);
   
@@ -683,7 +682,7 @@ int callback_websocket (const struct _u_request * request, struct _u_response * 
 
 int callback_websocket_with_origin (const struct _u_request * request, struct _u_response * response, void * user_data) {
   int ret;
-  char * origin = o_strdup(u_map_get_case(request->map_header, "Origin"));
+  char * origin = u_strdup(u_map_get_case(request->map_header, "Origin"));
   UNUSED(user_data);
 
   if (u_map_get_case(request->map_header, "Origin") != NULL) {
@@ -759,16 +758,16 @@ void websocket_extension_match_free_context(void * user_data, void * context) {
   UNUSED(user_data);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "inside websocket_extension_match_free_context");
   ck_assert_ptr_ne(context, NULL);
-  o_free(context);
+  u_free(context);
 }
 
 int websocket_extension_server_match_ext1(const char * extension_server, const char ** extension_client_list, char ** extension_client, void * user_data, void ** context) {
   UNUSED(extension_client_list);
   UNUSED(user_data);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "check match server extension "MESSAGE_EXT1" with extension '%s'", extension_server);
-  if (0 == o_strncmp(extension_server, MESSAGE_EXT1, o_strlen(MESSAGE_EXT1))) {
-    *extension_client = o_strdup(MESSAGE_EXT1);
-    *context = o_strdup("context for " MESSAGE_EXT1);
+  if (0 == u_strncmp(extension_server, MESSAGE_EXT1, u_strlen(MESSAGE_EXT1))) {
+    *extension_client = u_strdup(MESSAGE_EXT1);
+    *context = u_strdup("context for " MESSAGE_EXT1);
     return U_OK;
   } else {
     return U_ERROR;
@@ -779,9 +778,9 @@ int websocket_extension_server_match_ext2(const char * extension_server, const c
   UNUSED(extension_client_list);
   UNUSED(user_data);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "check match server extension "MESSAGE_EXT2" with extension '%s'", extension_server);
-  if (0 == o_strncmp(extension_server, MESSAGE_EXT2, o_strlen(MESSAGE_EXT2))) {
-    *extension_client = o_strdup(MESSAGE_EXT2);
-    *context = o_strdup("context for " MESSAGE_EXT1);
+  if (0 == u_strncmp(extension_server, MESSAGE_EXT2, u_strlen(MESSAGE_EXT2))) {
+    *extension_client = u_strdup(MESSAGE_EXT2);
+    *context = u_strdup("context for " MESSAGE_EXT1);
     return U_OK;
   } else {
     return U_ERROR;
@@ -791,8 +790,8 @@ int websocket_extension_server_match_ext2(const char * extension_server, const c
 int websocket_extension_client_match_ext1(const char * extension_server, void * user_data, void ** context) {
   UNUSED(user_data);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "check match client extension "MESSAGE_EXT1" with extension '%s'", extension_server);
-  if (0 == o_strncmp(extension_server, MESSAGE_EXT1, o_strlen(MESSAGE_EXT1))) {
-    *context = o_strdup("context for " MESSAGE_EXT1);
+  if (0 == u_strncmp(extension_server, MESSAGE_EXT1, u_strlen(MESSAGE_EXT1))) {
+    *context = u_strdup("context for " MESSAGE_EXT1);
     return U_OK;
   } else {
     return U_ERROR;
@@ -802,8 +801,8 @@ int websocket_extension_client_match_ext1(const char * extension_server, void * 
 int websocket_extension_client_match_ext2(const char * extension_server, void * user_data, void ** context) {
   UNUSED(user_data);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "check match client extension "MESSAGE_EXT2" with extension '%s'", extension_server);
-  if (0 == o_strncmp(extension_server, MESSAGE_EXT2, o_strlen(MESSAGE_EXT2))) {
-    *context = o_strdup("context for " MESSAGE_EXT2);
+  if (0 == u_strncmp(extension_server, MESSAGE_EXT2, u_strlen(MESSAGE_EXT2))) {
+    *context = u_strdup("context for " MESSAGE_EXT2);
     return U_OK;
   } else {
     return U_ERROR;
@@ -843,7 +842,7 @@ int websocket_extension_message_out_deflate_test(const uint8_t opcode,
       
       ret = U_OK;
       do {
-        if ((*data_out = o_realloc(*data_out, (*data_len_out)+_U_W_BUFF_LEN)) != NULL) {
+        if ((*data_out = ulfius_realloc(*data_out, (*data_len_out)+_U_W_BUFF_LEN)) != NULL) {
           deflate_context->defstream.avail_out = _U_W_BUFF_LEN;
           deflate_context->defstream.next_out = ((Bytef *)*data_out)+(*data_len_out);
           int res;
@@ -866,7 +865,7 @@ int websocket_extension_message_out_deflate_test(const uint8_t opcode,
       
       // https://github.com/madler/zlib/issues/149
       if (U_OK == ret && Z_BLOCK == deflate_context->deflate_mask) {
-        if ((*data_out = o_realloc(*data_out, (*data_len_out)+_U_W_BUFF_LEN)) != NULL) {
+        if ((*data_out = ulfius_realloc(*data_out, (*data_len_out)+_U_W_BUFF_LEN)) != NULL) {
           deflate_context->defstream.avail_out = _U_W_BUFF_LEN;
           deflate_context->defstream.next_out = ((Bytef *)*data_out)+(*data_len_out);
           switch (deflate(&deflate_context->defstream, Z_FULL_FLUSH)) {
@@ -887,7 +886,7 @@ int websocket_extension_message_out_deflate_test(const uint8_t opcode,
       }
 
       if (U_OK != ret) {
-        o_free(*data_out);
+        u_free(*data_out);
         *data_out = NULL;
         *data_len_out = 0;
       } else {
@@ -932,7 +931,7 @@ int websocket_extension_message_in_inflate_test(const uint8_t opcode,
     if (deflate_context != NULL) {
       *data_out = NULL;
       *data_len_out = 0;
-      if ((data_in_suffix = o_malloc(data_len_in+4)) != NULL) {
+      if ((data_in_suffix = ulfius_malloc(data_len_in+4)) != NULL) {
         memcpy(data_in_suffix, data_in, data_len_in);
         memcpy(data_in_suffix+data_len_in, suffix, 4);
         
@@ -941,7 +940,7 @@ int websocket_extension_message_in_inflate_test(const uint8_t opcode,
         
         ret = U_OK;
         do {
-          if ((*data_out = o_realloc(*data_out, (*data_len_out)+_U_W_BUFF_LEN)) != NULL) {
+          if ((*data_out = ulfius_realloc(*data_out, (*data_len_out)+_U_W_BUFF_LEN)) != NULL) {
             deflate_context->infstream.avail_out = _U_W_BUFF_LEN;
             deflate_context->infstream.next_out = ((Bytef *)*data_out)+(*data_len_out);
             switch (inflate(&deflate_context->infstream, deflate_context->inflate_mask)) {
@@ -961,9 +960,9 @@ int websocket_extension_message_in_inflate_test(const uint8_t opcode,
           }
         } while (U_OK == ret && deflate_context->infstream.avail_out == 0);
         
-        o_free(data_in_suffix);
+        u_free(data_in_suffix);
         if (U_OK != ret) {
-          o_free(*data_out);
+          u_free(*data_out);
           *data_out = NULL;
           *data_len_out = 0;
         }
@@ -978,7 +977,7 @@ int websocket_extension_message_in_inflate_test(const uint8_t opcode,
   } else {
     // If RSV1 flag isn't set, copy data as is (as seen in firefox)
     *data_len_out = data_len_in;
-    *data_out = o_malloc(data_len_in);
+    *data_out = ulfius_malloc(data_len_in);
     if (*data_out != NULL) {
       memcpy(*data_out, data_in, data_len_in);
       ret = U_OK;
@@ -1064,7 +1063,7 @@ START_TEST(test_ulfius_websocket_client)
   struct _u_request request;
   struct _u_response response;
   struct _websocket_client_handler websocket_client_handler = {NULL, NULL};
-  char url[64], * allocated_data = o_strdup("plop");
+  char url[64], * allocated_data = u_strdup("plop");
 
   ck_assert_int_eq(ulfius_init_instance(&instance, PORT_1, NULL, NULL), U_OK);
   ck_assert_int_eq(ulfius_add_endpoint_by_val(&instance, "GET", PREFIX_WEBSOCKET, NULL, 0, &callback_websocket, allocated_data), U_OK);
@@ -1085,8 +1084,8 @@ START_TEST(test_ulfius_websocket_client)
   // Test incorrect websocket connection on correct websocket service for libcurl < 7.86.0
   ulfius_init_request(&request);
   ulfius_init_response(&response);
-  request.http_verb = o_strdup("GET");
-  request.http_url = o_strdup(url);
+  request.http_verb = u_strdup("GET");
+  request.http_url = u_strdup(url);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_ERROR_LIBCURL); // On a websocket connection attempt, libcurl return 'Unsupported protocol'
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
@@ -1105,7 +1104,7 @@ START_TEST(test_ulfius_websocket_client)
   ck_assert_int_eq(ulfius_stop_framework(&instance), U_OK);
 
   ulfius_clean_instance(&instance);
-  o_free(allocated_data);
+  u_free(allocated_data);
 }
 END_TEST
 
@@ -1135,8 +1134,8 @@ START_TEST(test_ulfius_websocket_client_no_onclose)
   // Test incorrect websocket connection on correct websocket service for libcurl < 7.86.0
   ulfius_init_request(&request);
   ulfius_init_response(&response);
-  request.http_verb = o_strdup("GET");
-  request.http_url = o_strdup(url);
+  request.http_verb = u_strdup("GET");
+  request.http_url = u_strdup(url);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_ERROR_LIBCURL); // On a websocket connection attempt, libcurl return 'Unsupported protocol'
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
@@ -1514,6 +1513,7 @@ int main(void)
   int number_failed;
   Suite *s;
   SRunner *sr;
+  if (ulfius_set_alloc_funcs(malloc, fail_registry_resize, free) != U_OK) return EXIT_FAILURE;
   ulfius_global_init();
   s = ulfius_suite();
   sr = srunner_create(s);

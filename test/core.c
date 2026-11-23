@@ -2,6 +2,7 @@
 
 #ifndef _WIN32
 #include <netinet/in.h>
+#include "u_string.h"
 #endif
 
 #include <check.h>
@@ -32,7 +33,7 @@
 #define MAP_POST_BODY_KEY "map_post_body_key"
 #define MAP_POST_BODY_VALUE "map_post_body_value"
 #define BINARY_BODY "binary_body"
-#define BINARY_BODY_LEN o_strlen(BINARY_BODY)
+#define BINARY_BODY_LEN u_strlen(BINARY_BODY)
 #define STRING_BODY "string_body"
 #define CALLBACK_POSITION 2
 #define CLIENT_CERT_FILE "client_cert_file"
@@ -203,12 +204,12 @@ START_TEST(test_ulfius_request)
   ck_assert_ptr_eq(req1.client_key_password, NULL);
 #endif
 
-  req1.http_protocol = o_strdup(HTTP_PROTOCOL);
-  req1.http_verb = o_strdup(HTTP_VERB);
-  req1.http_url = o_strdup(HTTP_URL);
-  req1.url_path = o_strdup(URL_PATH);
-  req1.proxy = o_strdup(PROXY);
-  req1.ca_path = o_strdup(CA_PATH);
+  req1.http_protocol = u_strdup(HTTP_PROTOCOL);
+  req1.http_verb = u_strdup(HTTP_VERB);
+  req1.http_url = u_strdup(HTTP_URL);
+  req1.url_path = u_strdup(URL_PATH);
+  req1.proxy = u_strdup(PROXY);
+  req1.ca_path = u_strdup(CA_PATH);
 #if MHD_VERSION >= 0x00095208
   req1.network_type = U_USE_IPV4;
 #endif
@@ -217,19 +218,19 @@ START_TEST(test_ulfius_request)
   req1.check_proxy_certificate = 0;
   req1.check_proxy_certificate_flag = U_SSL_VERIFY_PEER;
   req1.timeout = TIMEOUT;
-  req1.auth_basic_user = o_strdup(AUTH_BASIC_USER);
-  req1.auth_basic_password = o_strdup(AUTH_BASIC_PASSWORD);
+  req1.auth_basic_user = u_strdup(AUTH_BASIC_USER);
+  req1.auth_basic_password = u_strdup(AUTH_BASIC_PASSWORD);
   u_map_put(req1.map_url, MAP_URL_KEY, MAP_URL_VALUE);
   u_map_put(req1.map_header, MAP_HEADER_KEY, MAP_HEADER_VALUE);
   u_map_put(req1.map_cookie, MAP_COOKIE_KEY, MAP_COOKIE_VALUE);
   u_map_put(req1.map_post_body, MAP_POST_BODY_KEY, MAP_POST_BODY_VALUE);
-  req1.binary_body = (unsigned char *)o_strdup(BINARY_BODY);
-  req1.binary_body_length = o_strlen(BINARY_BODY) + sizeof(char);
+  req1.binary_body = (unsigned char *)u_strdup(BINARY_BODY);
+  req1.binary_body_length = u_strlen(BINARY_BODY) + sizeof(char);
   req1.callback_position = CALLBACK_POSITION;
 #ifndef U_DISABLE_GNUTLS
-  req1.client_cert_file = o_strdup(CLIENT_CERT_FILE);
-  req1.client_key_file = o_strdup(CLIENT_KEY_FILE);
-  req1.client_key_password = o_strdup(CLIENT_KEY_PASSWORD);
+  req1.client_cert_file = u_strdup(CLIENT_CERT_FILE);
+  req1.client_key_file = u_strdup(CLIENT_KEY_FILE);
+  req1.client_key_password = u_strdup(CLIENT_KEY_PASSWORD);
 #endif
   
   // Test ulfius_copy_request
@@ -262,9 +263,9 @@ START_TEST(test_ulfius_request)
   ck_assert_int_eq(u_map_count(req2.map_post_body), 1);
   ck_assert_str_eq(u_map_get(req2.map_post_body, MAP_POST_BODY_KEY), MAP_POST_BODY_VALUE);
   ck_assert_ptr_ne(req1.binary_body, NULL);
-  ck_assert_int_eq(req1.binary_body_length, o_strlen(BINARY_BODY) + sizeof(char));
+  ck_assert_int_eq(req1.binary_body_length, u_strlen(BINARY_BODY) + sizeof(char));
   ck_assert_ptr_ne(req2.binary_body, NULL);
-  ck_assert_int_eq(req2.binary_body_length, o_strlen(BINARY_BODY) + sizeof(char));
+  ck_assert_int_eq(req2.binary_body_length, u_strlen(BINARY_BODY) + sizeof(char));
   ck_assert_int_eq(req2.callback_position, CALLBACK_POSITION);
 #ifndef U_DISABLE_GNUTLS
   //ck_assert_ptr_eq(req2.client_cert, NULL);
@@ -301,7 +302,7 @@ START_TEST(test_ulfius_request)
   ck_assert_int_eq(u_map_count(req3->map_post_body), 1);
   ck_assert_str_eq(u_map_get(req3->map_post_body, MAP_POST_BODY_KEY), MAP_POST_BODY_VALUE);
   ck_assert_ptr_ne(req3->binary_body, NULL);
-  ck_assert_int_eq(req3->binary_body_length, o_strlen(BINARY_BODY) + sizeof(char));
+  ck_assert_int_eq(req3->binary_body_length, u_strlen(BINARY_BODY) + sizeof(char));
   ck_assert_int_eq(req3->callback_position, CALLBACK_POSITION);
 #ifndef U_DISABLE_GNUTLS
   //ck_assert_ptr_eq(req3->client_cert, NULL);
@@ -315,7 +316,7 @@ START_TEST(test_ulfius_request)
   ulfius_init_request(&req1);
   ck_assert_int_eq(ulfius_set_string_body_request(&req1, STRING_BODY), U_OK);
   ck_assert_str_eq((char *)req1.binary_body, STRING_BODY);
-  ck_assert_int_eq(req1.binary_body_length, o_strlen(STRING_BODY));
+  ck_assert_int_eq(req1.binary_body_length, u_strlen(STRING_BODY));
   
   ck_assert_int_eq(ulfius_set_empty_body_request(&req1), U_OK);
   ck_assert_int_eq(req1.binary_body_length, 0);
@@ -330,7 +331,7 @@ START_TEST(test_ulfius_request)
   ck_assert_str_eq((char *)req1.binary_body, str_body);
   j_body2 = ulfius_get_json_body_request(&req1, NULL);
   ck_assert_int_eq(json_equal(j_body, j_body2), 1);
-  o_free(str_body);
+  u_free(str_body);
   json_decref(j_body);
   json_decref(j_body2);
   ck_assert_int_eq(u_map_put(req1.map_header, "ContenT-Type", "error"), U_OK);
@@ -354,16 +355,16 @@ START_TEST(test_ulfius_request_export)
   ck_assert_ptr_eq(NULL, ulfius_export_request_http(&req));
   ulfius_set_request_properties(&req, U_OPT_HTTP_URL, "http://localhost:8080/api/read/", U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "GET /api/read/ HTTP/1.1"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "Host: localhost:8080"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "GET /api/read/ HTTP/1.1"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "Host: localhost:8080"));
   u_free(export);
   ulfius_clean_request(&req);
   
   ulfius_init_request(&req);
   ulfius_set_request_properties(&req, U_OPT_HTTP_URL, "https://localhost/api/read/", U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "GET /api/read/ HTTP/1.1"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "Host: localhost"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "GET /api/read/ HTTP/1.1"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "Host: localhost"));
   u_free(export);
   ulfius_clean_request(&req);
   
@@ -371,8 +372,8 @@ START_TEST(test_ulfius_request_export)
   ulfius_set_request_properties(&req, U_OPT_HTTP_URL, "http://localhost:8080/api/read/?test=value&test2=value2",
                                       U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "GET /api/read/?test=value&test2=value2 HTTP/1.1"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "Host: localhost:8080"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "GET /api/read/?test=value&test2=value2 HTTP/1.1"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "Host: localhost:8080"));
   u_free(export);
   ulfius_clean_request(&req);
   
@@ -381,8 +382,8 @@ START_TEST(test_ulfius_request_export)
                                       U_OPT_URL_PARAMETER, "test3", "value4",
                                       U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "GET /api/read/?test=value&test2=value2&test3=value4 HTTP/1.1"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "Host: localhost:8080"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "GET /api/read/?test=value&test2=value2&test3=value4 HTTP/1.1"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "Host: localhost:8080"));
   u_free(export);
   ulfius_clean_request(&req);
   
@@ -391,8 +392,8 @@ START_TEST(test_ulfius_request_export)
                                       U_OPT_URL_PARAMETER, "test3", "value4",
                                       U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "GET /api/read/?test3=value4 HTTP/1.1"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "Host: localhost:8080"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "GET /api/read/?test3=value4 HTTP/1.1"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "Host: localhost:8080"));
   u_free(export);
   ulfius_clean_request(&req);
   
@@ -401,8 +402,8 @@ START_TEST(test_ulfius_request_export)
                                       U_OPT_URL_PARAMETER, "test3", "value4&%",
                                       U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "GET /api/read/?test3=value4%26%25 HTTP/1.1"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "Host: localhost:8080"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "GET /api/read/?test3=value4%26%25 HTTP/1.1"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "Host: localhost:8080"));
   u_free(export);
   ulfius_clean_request(&req);
   
@@ -411,8 +412,8 @@ START_TEST(test_ulfius_request_export)
                                       U_OPT_HTTP_VERB, "POST",
                                       U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "POST /api/read/ HTTP/1.1"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nHost: localhost\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "POST /api/read/ HTTP/1.1"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nHost: localhost\r\n"));
   u_free(export);
   ulfius_clean_request(&req);
   
@@ -423,10 +424,10 @@ START_TEST(test_ulfius_request_export)
                                       U_OPT_HEADER_PARAMETER, "other_param", "other_value",
                                       U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "POST /api/read/ HTTP/1.1\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nHost: localhost\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nother_param: other_value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nparam: value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "POST /api/read/ HTTP/1.1\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nHost: localhost\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nother_param: other_value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nparam: value\r\n"));
   u_free(export);
   ulfius_clean_request(&req);
   
@@ -439,11 +440,11 @@ START_TEST(test_ulfius_request_export)
                                       U_OPT_COOKIE_PARAMETER, "cookie_key", "cookie_value",
                                       U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "POST /api/read/?test3=value4 HTTP/1.1\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nHost: localhost\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nother_param: other_value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nparam: value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nCookie: cookie_key=cookie_value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "POST /api/read/?test3=value4 HTTP/1.1\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nHost: localhost\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nother_param: other_value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nparam: value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nCookie: cookie_key=cookie_value\r\n"));
   u_free(export);
   ulfius_clean_request(&req);
   
@@ -457,12 +458,12 @@ START_TEST(test_ulfius_request_export)
                                       U_OPT_COOKIE_PARAMETER, "cookie_key2", "cookie_value2",
                                       U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "POST /api/read/?test3=value4 HTTP/1.1\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nHost: localhost\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nother_param: other_value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nparam: value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nCookie: cookie_key=cookie_value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nCookie: cookie_key2=cookie_value2\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "POST /api/read/?test3=value4 HTTP/1.1\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nHost: localhost\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nother_param: other_value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nparam: value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nCookie: cookie_key=cookie_value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nCookie: cookie_key2=cookie_value2\r\n"));
   u_free(export);
   ulfius_clean_request(&req);
   
@@ -478,13 +479,13 @@ START_TEST(test_ulfius_request_export)
                                       U_OPT_POST_BODY_PARAMETER, "post2", "value2",
                                       U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "POST /api/read/?test3=value4 HTTP/1.1\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nHost: localhost\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nother_param: other_value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nparam: value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nCookie: cookie_key=cookie_value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nCookie: cookie_key2=cookie_value2\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\n\r\npost1=value1&post2=value2"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "POST /api/read/?test3=value4 HTTP/1.1\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nHost: localhost\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nother_param: other_value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nparam: value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nCookie: cookie_key=cookie_value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nCookie: cookie_key2=cookie_value2\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\n\r\npost1=value1&post2=value2"));
   u_free(export);
   ulfius_clean_request(&req);
   
@@ -496,16 +497,16 @@ START_TEST(test_ulfius_request_export)
                                       U_OPT_HEADER_PARAMETER, "other_param", "other_value",
                                       U_OPT_COOKIE_PARAMETER, "cookie_key", "cookie_value",
                                       U_OPT_COOKIE_PARAMETER, "cookie_key2", "cookie_value2",
-                                      U_OPT_BINARY_BODY, "This is a binary body", o_strlen("This is a binary body"),
+                                      U_OPT_BINARY_BODY, "This is a binary body", u_strlen("This is a binary body"),
                                       U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "POST /api/read/?test3=value4 HTTP/1.1\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nHost: localhost\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nother_param: other_value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nparam: value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nCookie: cookie_key=cookie_value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nCookie: cookie_key2=cookie_value2\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\n\r\nThis is a binary body"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "POST /api/read/?test3=value4 HTTP/1.1\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nHost: localhost\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nother_param: other_value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nparam: value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nCookie: cookie_key=cookie_value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nCookie: cookie_key2=cookie_value2\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\n\r\nThis is a binary body"));
   u_free(export);
   ulfius_clean_request(&req);
   
@@ -516,9 +517,9 @@ START_TEST(test_ulfius_request_export)
                                       U_OPT_AUTH_BASIC, "Aladdin", "open sesame",
                                       U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "POST /api/read/?test3=value4 HTTP/1.1\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nHost: localhost\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nAuthorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "POST /api/read/?test3=value4 HTTP/1.1\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nHost: localhost\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nAuthorization: Basic QWxhZGRpbjpvcGVuIHNlc2FtZQ==\r\n"));
   u_free(export);
   ulfius_clean_request(&req);
   
@@ -530,11 +531,11 @@ START_TEST(test_ulfius_request_export)
                                       U_OPT_JSON_BODY, j_body,
                                       U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_request_http(&req));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "POST /api/read/?test3=value4 HTTP/1.1\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nContent-Type: application/json\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nContent-Length: 27\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nHost: localhost\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\n\r\n{\"key1\":\"value1\",\"key2\":42}"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "POST /api/read/?test3=value4 HTTP/1.1\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nContent-Type: application/json\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nContent-Length: 27\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nHost: localhost\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\n\r\n{\"key1\":\"value1\",\"key2\":42}"));
   u_free(export);
   json_decref(j_body);
   ulfius_clean_request(&req);
@@ -599,7 +600,7 @@ START_TEST(test_ulfius_set_request_properties)
   ck_assert_int_eq(u_map_count(req.map_post_body), 1);
   ck_assert_str_eq(u_map_get(req.map_post_body, MAP_POST_BODY_KEY), MAP_POST_BODY_VALUE);
   ck_assert_ptr_ne(req.binary_body, NULL);
-  ck_assert_int_eq(req.binary_body_length, o_strlen(BINARY_BODY));
+  ck_assert_int_eq(req.binary_body_length, u_strlen(BINARY_BODY));
 #ifndef U_DISABLE_GNUTLS
   ck_assert_str_eq(req.client_cert_file, CLIENT_CERT_FILE);
   ck_assert_str_eq(req.client_key_file, CLIENT_KEY_FILE);
@@ -614,7 +615,7 @@ START_TEST(test_ulfius_set_request_properties)
                                                  U_OPT_POST_BODY_PARAMETER_REMOVE, MAP_POST_BODY_KEY,
                                                  U_OPT_NONE), U_OK);
   ck_assert_ptr_ne(req.binary_body, NULL);
-  ck_assert_int_eq(req.binary_body_length, o_strlen(STRING_BODY));
+  ck_assert_int_eq(req.binary_body_length, u_strlen(STRING_BODY));
   ck_assert_int_eq(u_map_count(req.map_url), 0);
   ck_assert_int_eq(u_map_count(req.map_header), 0);
   ck_assert_int_eq(u_map_count(req.map_cookie), 0);
@@ -685,7 +686,7 @@ START_TEST(test_ulfius_set_request_properties)
   ck_assert_int_eq(u_map_count(req.map_post_body), 1);
   ck_assert_str_eq(u_map_get(req.map_post_body, MAP_POST_BODY_KEY), MAP_POST_BODY_VALUE);
   ck_assert_ptr_ne(req.binary_body, NULL);
-  ck_assert_int_eq(req.binary_body_length, o_strlen(BINARY_BODY));
+  ck_assert_int_eq(req.binary_body_length, u_strlen(BINARY_BODY));
 #ifndef U_DISABLE_GNUTLS
   ck_assert_str_eq(req.client_cert_file, CLIENT_CERT_FILE);
   ck_assert_str_eq(req.client_key_file, CLIENT_KEY_FILE);
@@ -716,9 +717,9 @@ START_TEST(test_ulfius_request_limits)
 
   ulfius_init_request(&request);
   ulfius_init_response(&response);
-  request.http_url = o_strdup("http://localhost:8080/echo");
+  request.http_url = u_strdup("http://localhost:8080/echo");
   request.binary_body_length = 128;
-  request.binary_body = o_malloc(request.binary_body_length*sizeof(char));
+  request.binary_body = ulfius_malloc(request.binary_body_length*sizeof(char));
   ck_assert_ptr_ne(request.binary_body, NULL);
   memset(request.binary_body, '0', request.binary_body_length);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -729,9 +730,9 @@ START_TEST(test_ulfius_request_limits)
   
   ulfius_init_request(&request);
   ulfius_init_response(&response);
-  request.http_url = o_strdup("http://localhost:8080/echo");
+  request.http_url = u_strdup("http://localhost:8080/echo");
   request.binary_body_length = 256;
-  request.binary_body = o_malloc(request.binary_body_length*sizeof(char));
+  request.binary_body = ulfius_malloc(request.binary_body_length*sizeof(char));
   ck_assert_ptr_ne(request.binary_body, NULL);
   memset(request.binary_body, '0', request.binary_body_length);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -742,9 +743,9 @@ START_TEST(test_ulfius_request_limits)
   
   ulfius_init_request(&request);
   ulfius_init_response(&response);
-  request.http_url = o_strdup("http://localhost:8080/echo");
+  request.http_url = u_strdup("http://localhost:8080/echo");
   request.binary_body_length = 512;
-  request.binary_body = o_malloc(request.binary_body_length*sizeof(char));
+  request.binary_body = ulfius_malloc(request.binary_body_length*sizeof(char));
   ck_assert_ptr_ne(request.binary_body, NULL);
   memset(request.binary_body, '0', request.binary_body_length);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -755,9 +756,9 @@ START_TEST(test_ulfius_request_limits)
   
   ulfius_init_request(&request);
   ulfius_init_response(&response);
-  request.http_url = o_strdup("http://localhost:8080/echo");
+  request.http_url = u_strdup("http://localhost:8080/echo");
   request.binary_body_length = 1024;
-  request.binary_body = o_malloc(request.binary_body_length*sizeof(char));
+  request.binary_body = ulfius_malloc(request.binary_body_length*sizeof(char));
   ck_assert_ptr_ne(request.binary_body, NULL);
   memset(request.binary_body, '0', request.binary_body_length);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -768,9 +769,9 @@ START_TEST(test_ulfius_request_limits)
   
   ulfius_init_request(&request);
   ulfius_init_response(&response);
-  request.http_url = o_strdup("http://localhost:8080/echo");
+  request.http_url = u_strdup("http://localhost:8080/echo");
   request.binary_body_length = 2048;
-  request.binary_body = o_malloc(request.binary_body_length*sizeof(char));
+  request.binary_body = ulfius_malloc(request.binary_body_length*sizeof(char));
   ck_assert_ptr_ne(request.binary_body, NULL);
   memset(request.binary_body, '0', request.binary_body_length);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -781,9 +782,9 @@ START_TEST(test_ulfius_request_limits)
   
   ulfius_init_request(&request);
   ulfius_init_response(&response);
-  request.http_url = o_strdup("http://localhost:8080/echo");
+  request.http_url = u_strdup("http://localhost:8080/echo");
   request.binary_body_length = 16*1024;
-  request.binary_body = o_malloc(request.binary_body_length*sizeof(char));
+  request.binary_body = ulfius_malloc(request.binary_body_length*sizeof(char));
   ck_assert_ptr_ne(request.binary_body, NULL);
   memset(request.binary_body, '0', request.binary_body_length);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -794,9 +795,9 @@ START_TEST(test_ulfius_request_limits)
   
   ulfius_init_request(&request);
   ulfius_init_response(&response);
-  request.http_url = o_strdup("http://localhost:8080/echo");
+  request.http_url = u_strdup("http://localhost:8080/echo");
   request.binary_body_length = 2*1024*1024;
-  request.binary_body = o_malloc(request.binary_body_length*sizeof(char));
+  request.binary_body = ulfius_malloc(request.binary_body_length*sizeof(char));
   ck_assert_ptr_ne(request.binary_body, NULL);
   memset(request.binary_body, '0', request.binary_body_length);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -843,10 +844,10 @@ START_TEST(test_ulfius_response)
   ck_assert_int_eq(resp1.timeout, 0);
   
   resp1.status = STATUS;
-  resp1.protocol = o_strdup(PROTOCOL);
+  resp1.protocol = u_strdup(PROTOCOL);
   ck_assert_int_eq(u_map_put(resp1.map_header, MAP_HEADER_KEY, MAP_HEADER_VALUE), U_OK);
   ck_assert_int_eq(ulfius_add_cookie_to_response(&resp1, COOKIE_KEY, COOKIE_VALUE, COOKIE_EXPIRES, COOKIE_MAX_AGE, COOKIE_DOMAIN, COOKIE_PATH, COOKIE_SECURE, COOKIE_HTTP_ONLY), U_OK);
-  resp1.auth_realm = o_strdup(AUTH_REALM);
+  resp1.auth_realm = u_strdup(AUTH_REALM);
   
   ck_assert_int_eq(ulfius_set_stream_response(&resp1, STATUS, &stream_callback_empty, &stream_callback_empty_free, STREAM_SIZE, STREAM_BLOCK_SIZE, (void *)STREAM_USER_DATA), U_OK);
   ck_assert_ptr_eq(resp1.stream_callback, &stream_callback_empty);
@@ -865,7 +866,7 @@ START_TEST(test_ulfius_response)
   ck_assert_ptr_ne(((struct _websocket_handle *)resp1.websocket_handle)->websocket_onclose_user_data, NULL);
 #endif
   
-  resp1.binary_body = (unsigned char *)o_strdup(BINARY_BODY);
+  resp1.binary_body = (unsigned char *)u_strdup(BINARY_BODY);
   resp1.binary_body_length = BINARY_BODY_LEN;
   resp1.shared_data = (void *)SHARED_DATA;
   resp1.timeout = TIMEOUT;
@@ -928,7 +929,7 @@ START_TEST(test_ulfius_response)
   ulfius_init_response(&resp1);
   ck_assert_int_eq(ulfius_set_string_body_response(&resp1, STATUS, STRING_BODY), U_OK);
   ck_assert_ptr_ne(resp1.binary_body, NULL);
-  ck_assert_int_eq(resp1.binary_body_length, o_strlen(STRING_BODY));
+  ck_assert_int_eq(resp1.binary_body_length, u_strlen(STRING_BODY));
   
   ck_assert_int_eq(ulfius_set_empty_body_response(&resp1, STATUS), U_OK);
   ck_assert_int_eq(resp1.binary_body_length, 0);
@@ -943,7 +944,7 @@ START_TEST(test_ulfius_response)
   ck_assert_str_eq((const char *)resp1.binary_body, str_body);
   j_body2 = ulfius_get_json_body_response(&resp1, NULL);
   ck_assert_int_eq(json_equal(j_body, j_body2), 1);
-  o_free(str_body);
+  u_free(str_body);
   json_decref(j_body);
   json_decref(j_body2);
   ck_assert_int_eq(u_map_put(resp1.map_header, "ContenT-Type", "error"), U_OK);
@@ -966,16 +967,16 @@ START_TEST(test_ulfius_response_export)
 
   ulfius_init_response(&resp);
   ck_assert_ptr_ne(NULL, export = ulfius_export_response_http(&resp));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "HTTP/1.1 200\r\n"));
-  o_free(export);
+  ck_assert_ptr_ne(NULL, u_strstr(export, "HTTP/1.1 200\r\n"));
+  u_free(export);
   ulfius_clean_response(&resp);
   
   ulfius_init_response(&resp);
   ulfius_set_response_properties(&resp, U_OPT_STATUS, 400,
                                         U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_response_http(&resp));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "HTTP/1.1 400\r\n"));
-  o_free(export);
+  ck_assert_ptr_ne(NULL, u_strstr(export, "HTTP/1.1 400\r\n"));
+  u_free(export);
   ulfius_clean_response(&resp);
 
   ulfius_init_response(&resp);
@@ -984,9 +985,9 @@ START_TEST(test_ulfius_response_export)
                                         U_OPT_HEADER_PARAMETER, "param", "value",
                                         U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_response_http(&resp));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "HTTP/1.1 400\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nparam: value\r\n"));
-  o_free(export);
+  ck_assert_ptr_ne(NULL, u_strstr(export, "HTTP/1.1 400\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nparam: value\r\n"));
+  u_free(export);
   ulfius_clean_response(&resp);
 
   ulfius_init_response(&resp);
@@ -995,22 +996,22 @@ START_TEST(test_ulfius_response_export)
                                         U_OPT_HEADER_PARAMETER, "param", "value4&%",
                                         U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_response_http(&resp));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "HTTP/1.1 400\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nparam: value4&%\r\n"));
-  o_free(export);
+  ck_assert_ptr_ne(NULL, u_strstr(export, "HTTP/1.1 400\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nparam: value4&%\r\n"));
+  u_free(export);
   ulfius_clean_response(&resp);
 
   ulfius_init_response(&resp);
   ck_assert_ptr_eq(NULL, ulfius_export_response_http(NULL));
   ulfius_set_response_properties(&resp, U_OPT_STATUS, 404,
                                         U_OPT_HEADER_PARAMETER, "param", "value",
-                                        U_OPT_BINARY_BODY, "This is a binary body", o_strlen("This is a binary body"),
+                                        U_OPT_BINARY_BODY, "This is a binary body", u_strlen("This is a binary body"),
                                         U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_response_http(&resp));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "HTTP/1.1 404\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nparam: value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\n\r\nThis is a binary body"));
-  o_free(export);
+  ck_assert_ptr_ne(NULL, u_strstr(export, "HTTP/1.1 404\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nparam: value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\n\r\nThis is a binary body"));
+  u_free(export);
   ulfius_clean_response(&resp);
 
   ulfius_init_response(&resp);
@@ -1021,13 +1022,13 @@ START_TEST(test_ulfius_response_export)
                                         U_OPT_JSON_BODY, j_body,
                                         U_OPT_NONE);
   ck_assert_ptr_ne(NULL, export = ulfius_export_response_http(&resp));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "HTTP/1.1 404\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nparam: value\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nContent-Type: application/json\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nContent-Length: 27\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\n\r\n{\"key1\":\"value1\",\"key2\":42}"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "HTTP/1.1 404\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nparam: value\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nContent-Type: application/json\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nContent-Length: 27\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\n\r\n{\"key1\":\"value1\",\"key2\":42}"));
   json_decref(j_body);
-  o_free(export);
+  u_free(export);
   ulfius_clean_response(&resp);
 
   ulfius_init_response(&resp);
@@ -1037,10 +1038,10 @@ START_TEST(test_ulfius_response_export)
                                         U_OPT_NONE);
   ulfius_add_cookie_to_response(&resp, "respCookie", "cookieValue", NULL, 3600, "localhost", "/", 1, 1);
   ck_assert_ptr_ne(NULL, export = ulfius_export_response_http(&resp));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "HTTP/1.1 302\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nparam: value4&%\r\n"));
-  ck_assert_ptr_ne(NULL, o_strstr(export, "\r\nSet-Cookie: respCookie=cookieValue; Max-Age=3600; Domain=localhost; Path=/; Secure; HttpOnly\r\n"));
-  o_free(export);
+  ck_assert_ptr_ne(NULL, u_strstr(export, "HTTP/1.1 302\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nparam: value4&%\r\n"));
+  ck_assert_ptr_ne(NULL, u_strstr(export, "\r\nSet-Cookie: respCookie=cookieValue; Max-Age=3600; Domain=localhost; Path=/; Secure; HttpOnly\r\n"));
+  u_free(export);
   ulfius_clean_response(&resp);
 }
 END_TEST
@@ -1074,7 +1075,7 @@ START_TEST(test_ulfius_set_response_properties)
                                                   U_OPT_HEADER_PARAMETER_REMOVE, MAP_HEADER_KEY,
                                                   U_OPT_NONE), U_OK);
   ck_assert_ptr_ne(resp.binary_body, NULL);
-  ck_assert_int_eq(resp.binary_body_length, o_strlen(STRING_BODY));
+  ck_assert_int_eq(resp.binary_body_length, u_strlen(STRING_BODY));
   ck_assert_int_eq(u_map_count(resp.map_header), 0);
   
 #ifndef U_DISABLE_JANSSON
@@ -1138,9 +1139,9 @@ START_TEST(test_endpoint)
   endpoint.url_prefix = NULL;
   endpoint.http_method = "nope";
   ck_assert_int_eq(ulfius_add_endpoint(&u_instance, &endpoint), U_ERROR_PARAMS);
-  endpoint.http_method = o_strdup("test0");
-  endpoint.url_prefix = o_strdup("test0");
-  endpoint.url_format = o_strdup("test0");
+  endpoint.http_method = u_strdup("test0");
+  endpoint.url_prefix = u_strdup("test0");
+  endpoint.url_format = u_strdup("test0");
   ck_assert_int_eq(ulfius_add_endpoint(&u_instance, &endpoint), U_OK);
   
   ck_assert_int_eq(ulfius_add_endpoint_by_val(&u_instance, "nope", NULL, NULL, 0, NULL, NULL), U_ERROR_PARAMS);
@@ -1166,9 +1167,9 @@ START_TEST(test_endpoint)
   ck_assert_int_eq(ulfius_set_default_endpoint(&u_instance, NULL, NULL), U_ERROR_PARAMS);
   ck_assert_int_eq(ulfius_set_default_endpoint(&u_instance, &callback_function_empty, NULL), U_OK);
   
-  o_free(endpoint.http_method);
-  o_free(endpoint.url_prefix);
-  o_free(endpoint.url_format);
+  u_free(endpoint.http_method);
+  u_free(endpoint.url_prefix);
+  u_free(endpoint.url_format);
   ulfius_clean_instance(&u_instance);
 }
 END_TEST
@@ -1321,19 +1322,19 @@ START_TEST(test_url_encode_decode)
   ck_assert_ptr_eq(ulfius_url_encode(NULL), NULL);
   ck_assert_ptr_ne((result = ulfius_url_encode(raw)), NULL);
   ck_assert_str_eq(result, raw_encoded);
-  o_free(result);
+  u_free(result);
   ck_assert_ptr_ne((result = ulfius_url_encode(easy_raw)), NULL);
   ck_assert_str_eq(result, easy_raw);
-  o_free(result);
+  u_free(result);
   
   // Test ulfius_url_decode
   ck_assert_ptr_eq(ulfius_url_decode(NULL), NULL);
   ck_assert_ptr_ne((result = ulfius_url_decode(raw_encoded)), NULL);
   ck_assert_str_eq(result, raw);
-  o_free(result);
+  u_free(result);
   ck_assert_ptr_ne((result = ulfius_url_decode(easy_raw)), NULL);
   ck_assert_str_eq(result, easy_raw);
-  o_free(result);
+  u_free(result);
 }
 END_TEST
 

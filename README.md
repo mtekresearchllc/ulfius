@@ -1,8 +1,10 @@
 # Ulfius HTTP Framework
 
-The development branch contains the unreleased 3.0.0 logging API change.
+The development branch contains the unreleased 3.0.0 logging and memory API changes.
 Applications must migrate Yder log registration to Ulfius callbacks; see
-[Application logging](API.md#application-logging). Use the published 2.7 release
+[Application logging](API.md#application-logging) and
+[Memory management](API.md#memory-management). Orcania and Yder are no longer
+required. Use the published 2.7 release
 for existing deployments until the major release is finalized.
 
 This repository is the MTEK Research continuation of Ulfius, a C HTTP and

@@ -25,7 +25,7 @@ DESTDIR=/usr/local
 
 
 CFLAGS+=-c -Wall -Werror -Wextra -Wconversion -I$(ULFIUS_INCLUDE) $(ADDITIONALFLAGS) $(CPPFLAGS)
-LIBS=-lc -lulfius -lorcania -L$(ULFIUS_LOCATION)
+LIBS=-lc -lulfius -L$(ULFIUS_LOCATION)
 
 REMOTE_URL=http://localhost:9275/websocket/echo
 COMMAND=./uwsc --output-log-file out.log $(REMOTE_URL)
@@ -42,9 +42,9 @@ debug: uwsc
 ../../src/libulfius.so:
 	cd $(ULFIUS_LOCATION) && $(MAKE) debug JANSSONFLAG=-DU_DISABLE_JANSSON CURLFLAG=-DU_DISABLE_CURL
 
-uwsc: ../../src/libulfius.so uwsc.c
-	$(CC) $(CFLAGS) uwsc.c
-	$(CC) -o uwsc uwsc.o $(LIBS)
+uwsc: ../../src/libulfius.so uwsc.c $(ULFIUS_LOCATION)/u_string.c $(ULFIUS_LOCATION)/u_token.c
+	$(CC) $(CFLAGS) uwsc.c $(ULFIUS_LOCATION)/u_string.c $(ULFIUS_LOCATION)/u_token.c
+	$(CC) -o uwsc uwsc.o u_string.o u_token.o $(LIBS)
 
 test: uwsc
 	LD_LIBRARY_PATH=$(ULFIUS_LOCATION):${LD_LIBRARY_PATH} $(COMMAND)

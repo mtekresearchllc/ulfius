@@ -12,6 +12,7 @@
  */
 
 #include <stdio.h>
+#include "u_string.h"
 #include <string.h>
 #include <ulfius.h>
 
@@ -29,20 +30,20 @@ char * print_map(const struct _u_map * map) {
     for (i=0; keys[i] != NULL; i++) {
       value = u_map_get(map, keys[i]);
       len = snprintf(NULL, 0, "key is %s, value is %s", keys[i], value);
-      line = o_malloc((size_t)(len+1));
+      line = ulfius_malloc((size_t)(len+1));
       snprintf(line, (size_t)(len+1), "key is %s, value is %s", keys[i], value);
       if (to_return != NULL) {
-        len = (int)(o_strlen(to_return) + o_strlen(line) + 1);
-        to_return = o_realloc(to_return, (size_t)(len+1));
-        if (o_strlen(to_return) > 0) {
+        len = (int)(u_strlen(to_return) + u_strlen(line) + 1);
+        to_return = ulfius_realloc(to_return, (size_t)(len+1));
+        if (u_strlen(to_return) > 0) {
           strcat(to_return, "\n");
         }
       } else {
-        to_return = o_malloc((o_strlen(line) + 1));
+        to_return = ulfius_malloc((u_strlen(line) + 1));
         to_return[0] = 0;
       }
       strcat(to_return, line);
-      o_free(line);
+      u_free(line);
     }
     return to_return;
   } else {
@@ -65,7 +66,7 @@ int put_file_content_in_map (struct _u_map * map, const char * file_path, uint64
       fseek (f, 0, SEEK_END);
       length = ftell (f);
       fseek (f, 0, SEEK_SET);
-      buffer = o_malloc((size_t)length);
+      buffer = ulfius_malloc((size_t)length);
       if (buffer) {
         fread (buffer, 1, (size_t)length, f);
       }
@@ -73,7 +74,7 @@ int put_file_content_in_map (struct _u_map * map, const char * file_path, uint64
 
       if (buffer) {
         res = u_map_put_binary(map,file_path,  (char *)buffer, offset, (size_t)length);
-        o_free(buffer);
+        u_free(buffer);
       } else {
         res = U_ERROR;
       }
@@ -96,7 +97,7 @@ int main (void) {
     
     print = print_map(&map);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 1, map is\n%s\n", print);
-    o_free(print);
+    u_free(print);
     
     u_map_put(&map, "key1", "value1");
     u_map_put(&map, "key2", "value2");
@@ -104,13 +105,13 @@ int main (void) {
     
     print = print_map(&map);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 2, map is\n%s\n", print);
-    o_free(print);
+    u_free(print);
     
     u_map_put(&map, "key2", "value4");
     
     print = print_map(&map);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 3, map is\n%s\n", print);
-    o_free(print);
+    u_free(print);
     
     map_copy = u_map_copy(&map);
     u_map_put(map_copy, "key4", "value5");
@@ -118,44 +119,44 @@ int main (void) {
     print = print_map(&map);
     print_copy = print_map(map_copy);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 4, map is\n%s\nmap_copy is\n%s\n", print, print_copy);
-    o_free(print);
-    o_free(print_copy);
+    u_free(print);
+    u_free(print_copy);
     
     u_map_remove_at(&map, 2);
     
     print = print_map(&map);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 5: remove item 2 from map, map is\n%s\n", print);
-    o_free(print);
+    u_free(print);
     
     u_map_remove_from_key(map_copy, "key1");
     
     print = print_map(map_copy);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 6: remove key:key1 from map_copy, map is\n%s\n", print);
-    o_free(print);
+    u_free(print);
     
     u_map_remove_from_key(map_copy, "key_nope");
     
     print = print_map(map_copy);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 7: remove key:key_nope from map_copy, map is\n%s\n", print);
-    o_free(print);
+    u_free(print);
     
     u_map_remove_from_key_case(map_copy, "Key2");
     
     print = print_map(map_copy);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 8: remove case key:Key2 from map_copy, map is\n%s\n", print);
-    o_free(print);
+    u_free(print);
     
     u_map_remove_from_value(map_copy, "value3");
     
     print = print_map(map_copy);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 9: remove value:value3 from map_copy, map is\n%s\n", print);
-    o_free(print);
+    u_free(print);
     
     u_map_remove_from_value_case(map_copy, "Value5");
     
     print = print_map(map_copy);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 10: remove case value:Value5 from map_copy, map is\n%s\n", print);
-    o_free(print);
+    u_free(print);
     
     ulfius_log_message(ULFIUS_LOG_DEBUG, "map has key key1? %d", u_map_has_key(&map, "key1"));
     ulfius_log_message(ULFIUS_LOG_DEBUG, "map has key key_nope? %d", u_map_has_key(&map, "key_nope"));
@@ -178,26 +179,26 @@ int main (void) {
     
     print = print_map(&map);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 11, map is\n%s\n", print);
-    o_free(print);
+    u_free(print);
     
     u_map_remove_from_key(&map, "../sheep_counter/static/sheep.png");
     put_file_content_in_map(&map, "Makefile", 0);
     
     print = print_map(&map);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 12, map is\n%s\n", print);
-    o_free(print);
+    u_free(print);
     
-    u_map_put_binary(&map, "Makefile", "Replace the first characters", 0, o_strlen("Replace the first characters"));
-    
-    print = print_map(&map);
-    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 12, map is\n%s\n", print);
-    o_free(print);
-    
-    u_map_put_binary(&map, "Makefile", "Append at the end of the value", (uint64_t)u_map_get_length(&map, "Makefile"), o_strlen("Append at the end of the value"));
+    u_map_put_binary(&map, "Makefile", "Replace the first characters", 0, u_strlen("Replace the first characters"));
     
     print = print_map(&map);
     ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 12, map is\n%s\n", print);
-    o_free(print);
+    u_free(print);
+    
+    u_map_put_binary(&map, "Makefile", "Append at the end of the value", (uint64_t)u_map_get_length(&map, "Makefile"), u_strlen("Append at the end of the value"));
+    
+    print = print_map(&map);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 12, map is\n%s\n", print);
+    u_free(print);
     
     u_map_clean(&map);
     u_map_clean_full(map_copy);

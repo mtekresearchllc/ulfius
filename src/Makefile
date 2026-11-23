@@ -22,7 +22,7 @@ PROJECT_NAME=ulfius
 PROJECT_DESCRIPTION=Web Framework to build REST APIs, Webservices or any HTTP endpoint in C language. Can stream large amount of data, integrate JSON data with Jansson, and create websocket services
 PROJECT_BUGREPORT_PATH=https://github.com/mtekresearchllc/ulfius/issues
 PKGCONF_REQ=
-PKGCONF_REQ_PRIVATE=
+PKGCONF_REQ_PRIVATE=libmicrohttpd zlib
 ULFIUS_INCLUDE=../include
 CONFIG_TEMPLATE=$(ULFIUS_INCLUDE)/ulfius-cfg.h.in
 CONFIG_FILE=$(ULFIUS_INCLUDE)/ulfius-cfg.h
@@ -31,14 +31,14 @@ PKGCONFIG_TEMPLATE=../libulfius.pc.in
 DESTDIR=/usr/local
 CC=gcc
 CFLAGS+=-c -pedantic -std=gnu99 -fPIC -Wall -Werror -Wextra -Wconversion -Wpedantic -D_REENTRANT -I$(ULFIUS_INCLUDE) $(ADDITIONALFLAGS) $(CPPFLAGS)
-LIBSDEP=-lorcania -lmicrohttpd -lpthread -lz
+LIBSDEP=-lmicrohttpd -lpthread -lz
 LIBS=-L$(DESTDIR)/lib -lc $(LDFLAGS)
 LIB_STATIC=
 SONAME = -soname
 ifeq ($(shell uname -s),Darwin)
 	SONAME = -install_name
 endif
-OBJECTS=ulfius.o u_map.o u_request.o u_response.o u_send_request.o u_websocket.o yuarel.o u_logging.o
+OBJECTS=ulfius.o u_map.o u_request.o u_response.o u_send_request.o u_websocket.o yuarel.o u_logging.o u_memory.o u_mhd.o u_string.o u_token.o u_base64.o u_list.o u_json.o
 OUTPUT=libulfius.so
 VERSION_MAJOR=3
 VERSION_MINOR=0
@@ -47,6 +47,7 @@ VERSION_PATCH=0
 ifndef JANSSONFLAG
 DISABLE_JANSSON=0
 LJANSSON=-ljansson
+PKGCONF_REQ_PRIVATE+=jansson >= 2.4
 else
 DISABLE_JANSSON=1
 endif
@@ -54,6 +55,7 @@ endif
 ifndef CURLFLAG
 DISABLE_CURL=0
 LCURL=-lcurl
+PKGCONF_REQ_PRIVATE+=libcurl
 else
 DISABLE_CURL=1
 endif
@@ -61,6 +63,7 @@ endif
 ifndef GNUTLSFLAG
 DISABLE_GNUTLS=0
 LGNUTLS=-lgnutls
+PKGCONF_REQ_PRIVATE+=gnutls
 else
 DISABLE_GNUTLS=1
 WEBSOCKETFLAG=1
@@ -197,7 +200,7 @@ install: all $(PKGCONFIG_FILE)
 	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(DESTDIR)/lib/$(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR)
 	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR) $(DESTDIR)/lib/$(OUTPUT)
 	install -m644 $(PKGCONFIG_FILE) $(DESTDIR)/lib/pkgconfig/
-	install -m644 $(ULFIUS_INCLUDE)/ulfius.h $(ULFIUS_INCLUDE)/u_logging.h $(DESTDIR)/include
+	install -m644 $(ULFIUS_INCLUDE)/ulfius.h $(ULFIUS_INCLUDE)/u_logging.h $(ULFIUS_INCLUDE)/u_memory.h $(DESTDIR)/include
 	install -m644 $(CONFIG_FILE) $(DESTDIR)/include
 	-ldconfig $(DESTDIR)/lib
 
@@ -205,13 +208,13 @@ static-install: static
 	install libulfius.a $(DESTDIR)/lib
 	mkdir -p $(DESTDIR)/lib/pkgconfig/ $(DESTDIR)/include
 	install -m644 $(PKGCONFIG_FILE) $(DESTDIR)/lib/pkgconfig
-	install -m644 $(ULFIUS_INCLUDE)/ulfius.h $(ULFIUS_INCLUDE)/u_logging.h $(DESTDIR)/include
+	install -m644 $(ULFIUS_INCLUDE)/ulfius.h $(ULFIUS_INCLUDE)/u_logging.h $(ULFIUS_INCLUDE)/u_memory.h $(DESTDIR)/include
 	install -m644 $(CONFIG_FILE) $(DESTDIR)/include
 
 uninstall:
 	rm -f $(DESTDIR)/lib/$(OUTPUT) $(DESTDIR)/lib/libulfius.a
 	rm -f $(DESTDIR)/lib/$(OUTPUT).*
-	rm -f $(DESTDIR)/include/ulfius.h $(DESTDIR)/include/u_logging.h
+	rm -f $(DESTDIR)/include/ulfius.h $(DESTDIR)/include/u_logging.h $(DESTDIR)/include/u_memory.h
 	rm -f $(DESTDIR)/include/$(CONFIG_FILE)
 	rm -f $(DESTDIR)/lib/pkgconfig/$(PKGCONFIG_FILE)
 

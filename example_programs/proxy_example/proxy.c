@@ -65,15 +65,15 @@ int main (void) {
  */
 int callback_get (const struct _u_request * request, struct _u_response * response, void * user_data) {
   struct _u_request * req = ulfius_duplicate_request(request);
-  struct _u_response * res = o_malloc(sizeof(struct _u_response));
+  struct _u_response * res = ulfius_malloc(sizeof(struct _u_response));
   ulfius_init_response(res);
   int len;
   (void)(user_data);
 
-  o_free(req->http_url);
+  u_free(req->http_url);
   u_map_remove_from_key(req->map_header, "Host");
   len = snprintf(NULL, 0, "%s%s", PROXY_DEST, request->http_url);
-  req->http_url = o_malloc((size_t)(len+1));
+  req->http_url = ulfius_malloc((size_t)(len+1));
   snprintf(req->http_url, (size_t)(len+1), "%s%s", PROXY_DEST, request->http_url);
   printf("Accessing %s as proxy\n", req->http_url);
   req->timeout = 30;

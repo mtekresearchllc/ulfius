@@ -88,10 +88,13 @@
  *
  */
 #include <pthread.h>
+#include "u_token.h"
+#include "u_string.h"
 #include <zlib.h>
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 #include <ulfius.h>
 
 #include "static_compressed_inmemory_website_callback.h"
@@ -113,12 +116,12 @@
 
 static void * u_zalloc(void * q, unsigned n, unsigned m) {
   (void)q;
-  return o_malloc((size_t) n * m);
+  return ulfius_malloc((size_t) n * m);
 }
 
 static void u_zfree(void *q, void *p) {
   (void)q;
-  o_free(p);
+  u_free(p);
 }
 
 /**
@@ -165,10 +168,10 @@ static int callback_static_file_uncompressed (const struct _u_request * request,
   int ret = U_CALLBACK_CONTINUE;
 
   if (user_data != NULL && ((struct _u_compressed_inmemory_website_config *)user_data)->files_path != NULL) {
-    file_requested = o_strdup(request->http_url);
+    file_requested = u_strdup(request->http_url);
     url_dup_save = file_requested;
 
-    file_requested += o_strlen(((struct _u_compressed_inmemory_website_config *)user_data)->url_prefix);
+    file_requested += u_strlen(((struct _u_compressed_inmemory_website_config *)user_data)->url_prefix);
     while (file_requested[0] == '/') {
       file_requested++;
     }
@@ -181,14 +184,14 @@ static int callback_static_file_uncompressed (const struct _u_request * request,
       *strchr(file_requested, '?') = '\0';
     }
 
-    if (file_requested == NULL || o_strnullempty(file_requested) || 0 == o_strcmp("/", file_requested)) {
-      o_free(url_dup_save);
-      url_dup_save = file_requested = o_strdup("index.html");
+    if (file_requested == NULL || u_strnullempty(file_requested) || 0 == u_strcmp("/", file_requested)) {
+      u_free(url_dup_save);
+      url_dup_save = file_requested = u_strdup("index.html");
     }
 
-    file_path = msprintf("%s/%s", ((struct _u_compressed_inmemory_website_config *)user_data)->files_path, file_requested);
+    file_path = u_printf("%s/%s", ((struct _u_compressed_inmemory_website_config *)user_data)->files_path, file_requested);
     real_path = realpath(file_path, NULL);
-    if (0 == o_strncmp(((struct _u_compressed_inmemory_website_config *)user_data)->files_path, real_path, o_strlen(((struct _u_compressed_inmemory_website_config *)user_data)->files_path))) {
+    if (0 == u_strncmp(((struct _u_compressed_inmemory_website_config *)user_data)->files_path, real_path, u_strlen(((struct _u_compressed_inmemory_website_config *)user_data)->files_path))) {
       f = fopen (file_path, "rb");
       if (f) {
         fseek (f, 0, SEEK_END);
@@ -222,8 +225,8 @@ static int callback_static_file_uncompressed (const struct _u_request * request,
         response->status = 302;
       }
     }
-    o_free(url_dup_save);
-    o_free(file_path);
+    u_free(url_dup_save);
+    u_free(file_path);
     free(real_path); // realpath uses malloc
 
   } else {
@@ -272,16 +275,16 @@ void u_clean_compressed_inmemory_website_config(struct _u_compressed_inmemory_we
     u_map_clean(&(config->map_header));
     u_map_clean(&(config->gzip_files));
     u_map_clean(&(config->deflate_files));
-    free_string_array(config->mime_types_compressed);
+    u_free_string_array(config->mime_types_compressed);
     pthread_mutex_destroy(&(config->lock));
   }
 }
 
 int u_add_mime_types_compressed(struct _u_compressed_inmemory_website_config * config, const char * mime_type) {
   int ret;
-  if (config != NULL && !o_strnullempty(mime_type)) {
-    if ((config->mime_types_compressed = o_realloc(config->mime_types_compressed, (config->mime_types_compressed_size+2)*sizeof(char*))) != NULL) {
-      config->mime_types_compressed[config->mime_types_compressed_size] = o_strdup(mime_type);
+  if (config != NULL && !u_strnullempty(mime_type)) {
+    if ((config->mime_types_compressed = ulfius_realloc(config->mime_types_compressed, (config->mime_types_compressed_size+2)*sizeof(char*))) != NULL) {
+      config->mime_types_compressed[config->mime_types_compressed_size] = u_strdup(mime_type);
       config->mime_types_compressed[config->mime_types_compressed_size+1] = NULL;
       config->mime_types_compressed_size++;
       ret = U_OK;
@@ -313,10 +316,10 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
   if (request->callback_position > 0) {
     return U_CALLBACK_IGNORE;
   } else {
-    file_requested = o_strdup(request->http_url);
+    file_requested = u_strdup(request->http_url);
     url_dup_save = file_requested;
 
-    file_requested += o_strlen((config->url_prefix));
+    file_requested += u_strlen((config->url_prefix));
     while (file_requested[0] == '/') {
       file_requested++;
     }
@@ -329,16 +332,16 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
       *strchr(file_requested, '?') = '\0';
     }
 
-    if (file_requested == NULL || o_strnullempty(file_requested) || 0 == o_strcmp("/", file_requested)) {
-      o_free(url_dup_save);
-      url_dup_save = file_requested = o_strdup("index.html");
+    if (file_requested == NULL || u_strnullempty(file_requested) || 0 == u_strcmp("/", file_requested)) {
+      u_free(url_dup_save);
+      url_dup_save = file_requested = u_strdup("index.html");
     }
 
     if (!u_map_has_key_case(response->map_header, U_CONTENT_HEADER)) {
-      if (split_string(u_map_get_case(request->map_header, U_ACCEPT_HEADER), ",", &accept_list)) {
-        if (config->allow_gzip && string_array_has_trimmed_value((const char **)accept_list, U_ACCEPT_GZIP)) {
+      if (u_split_string(u_map_get_case(request->map_header, U_ACCEPT_HEADER), ",", &accept_list)) {
+        if (config->allow_gzip && u_string_array_has_trimmed_value((const char **)accept_list, U_ACCEPT_GZIP)) {
           compress_mode = U_COMPRESS_GZIP;
-        } else if (config->allow_deflate && string_array_has_trimmed_value((const char **)accept_list, U_ACCEPT_DEFLATE)) {
+        } else if (config->allow_deflate && u_string_array_has_trimmed_value((const char **)accept_list, U_ACCEPT_DEFLATE)) {
           compress_mode = U_COMPRESS_DEFL;
         }
 
@@ -364,9 +367,9 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
             u_map_put(response->map_header, "Content-Type", content_type);
             u_map_copy_into(response->map_header, &config->map_header);
           } else {
-            file_path = msprintf("%s/%s", ((struct _u_compressed_inmemory_website_config *)user_data)->files_path, file_requested);
+            file_path = u_printf("%s/%s", ((struct _u_compressed_inmemory_website_config *)user_data)->files_path, file_requested);
             real_path = realpath(file_path, NULL);
-            if (0 == o_strncmp(((struct _u_compressed_inmemory_website_config *)user_data)->files_path, real_path, o_strlen(((struct _u_compressed_inmemory_website_config *)user_data)->files_path))) {
+            if (0 == u_strncmp(((struct _u_compressed_inmemory_website_config *)user_data)->files_path, real_path, u_strlen(((struct _u_compressed_inmemory_website_config *)user_data)->files_path))) {
               if (!pthread_mutex_lock(&config->lock)) {
                 f = fopen (file_path, "rb");
                 if (f) {
@@ -375,7 +378,7 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
                     content_type = u_map_get(&config->mime_types, "*");
                     ulfius_log_message(ULFIUS_LOG_WARNING, "Static File Server - Unknown mime type for extension %s", get_filename_ext(file_requested));
                   }
-                  if (!string_array_has_value((const char **)config->mime_types_compressed, content_type)) {
+                  if (!u_string_array_has_value((const char **)config->mime_types_compressed, content_type)) {
                     ret = callback_static_file_uncompressed(request, response, user_data);
                   } else {
                     u_map_put(response->map_header, "Content-Type", content_type);
@@ -386,7 +389,7 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
                     fseek (f, 0, SEEK_SET);
 
                     if (length) {
-                      if ((file_content_orig = file_content = o_malloc(length)) != NULL && (data_zip = o_malloc((2*length)+20)) != NULL) {
+                      if ((file_content_orig = file_content = ulfius_malloc(length)) != NULL && (data_zip = ulfius_malloc((2*length)+20)) != NULL) {
                         defstream.zalloc = u_zalloc;
                         defstream.zfree = u_zfree;
                         defstream.opaque = Z_NULL;
@@ -415,7 +418,7 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
                         }
                         if (ret == U_CALLBACK_CONTINUE) {
                           do {
-                            if ((data_zip = o_realloc(data_zip, data_zip_len+_U_W_BLOCK_SIZE)) != NULL) {
+                            if ((data_zip = ulfius_realloc(data_zip, data_zip_len+_U_W_BLOCK_SIZE)) != NULL) {
                               defstream.avail_out = _U_W_BLOCK_SIZE;
                               defstream.next_out = ((Bytef *)data_zip)+data_zip_len;
                               switch ((res = deflate(&defstream, Z_FINISH))) {
@@ -455,12 +458,12 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
                           }
                         }
                         deflateEnd(&defstream);
-                        o_free(data_zip);
+                        u_free(data_zip);
                       } else {
                         ulfius_log_message(ULFIUS_LOG_ERROR, "callback_static_compressed_inmemory_website - Error allocating resource for file_content or data_zip");
                         ret = U_CALLBACK_ERROR;
                       }
-                      o_free(file_content_orig);
+                      u_free(file_content_orig);
                     }
                     fclose(f);
                   }
@@ -485,20 +488,20 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
                 response->status = 302;
               }
             }
-            o_free(file_path);
+            u_free(file_path);
             free(real_path); // realpath uses malloc
           }
         } else {
           ret = callback_static_file_uncompressed(request, response, user_data);
         }
-        free_string_array(accept_list);
+        u_free_string_array(accept_list);
       } else {
         ret = callback_static_file_uncompressed(request, response, user_data);
       }
     } else {
       ret = callback_static_file_uncompressed(request, response, user_data);
     }
-    o_free(url_dup_save);
+    u_free(url_dup_save);
   }
 
   return ret;

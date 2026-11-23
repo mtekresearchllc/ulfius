@@ -67,8 +67,12 @@ extern "C"
   #define U_DISABLE_WEBSOCKET
 #endif
 
-/** Angharad libraries **/
-#include <orcania.h>
+/** memory ownership and opaque extension storage **/
+#include "u_memory.h"
+#ifndef ULFIUS_POINTER_LIST_TYPE
+#define ULFIUS_POINTER_LIST_TYPE
+typedef struct _u_pointer_list u_pointer_list_t;
+#endif
 
 #include <u_logging.h>
 
@@ -1621,7 +1625,7 @@ struct _websocket_manager {
   struct pollfd                    fds_out;
   int                              type;
   int                              rsv_expected;
-  struct _pointer_list           * websocket_extension_list;
+  u_pointer_list_t           * websocket_extension_list;
 };
 
 /**
@@ -2128,7 +2132,7 @@ struct _websocket_handle {
                                                       void * websocket_onclose_user_data);
   void                 * websocket_onclose_user_data; /* !< user-defined data that will be handled to websocket_onclose_callback */
   int                    rsv_expected;
-  struct _pointer_list * websocket_extension_list;
+  u_pointer_list_t * websocket_extension_list;
 };
 
 /**

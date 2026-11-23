@@ -1,6 +1,7 @@
 /* Public domain, no copyright. Use at your own risk. */
 
 #include <sys/socket.h>
+#include "u_string.h"
 #include <sys/select.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -4642,8 +4643,8 @@ static void handle_smtp (struct smtp_manager * manager) {
   int inmessage = 0;
 
   sprintf(bufferout, "220 ulfius.tld SMTP CCSMTP\r\n");
-  send(manager->sockfd, bufferout, o_strlen(bufferout), 0);
-  //manager->mail_data = mstrcatf(manager->mail_data, bufferout);
+  send(manager->sockfd, bufferout, u_strlen(bufferout), 0);
+  //manager->mail_data = u_appendf(manager->mail_data, bufferout);
 
   while (1) {
     fd_set sockset;
@@ -4666,8 +4667,8 @@ static void handle_smtp (struct smtp_manager * manager) {
     if (buffer_left == 0) {
       ulfius_log_message(ULFIUS_LOG_DEBUG, "%d: Command line too long", manager->sockfd);
       sprintf(bufferout, "500 Too long\r\n");
-      send(manager->sockfd, bufferout, o_strlen(bufferout), 0);
-      //manager->mail_data = mstrcatf(manager->mail_data, bufferout);
+      send(manager->sockfd, bufferout, u_strlen(bufferout), 0);
+      //manager->mail_data = u_appendf(manager->mail_data, bufferout);
       buffer_offset = 0;
       continue;
     }
@@ -4701,7 +4702,7 @@ processline:
     eol[0] = '\0';
 
     if (!inmessage) { // Handle system verbs
-      manager->mail_data = mstrcatf(manager->mail_data, "%s\n", buffer);
+      manager->mail_data = u_appendf(manager->mail_data, "%s\n", buffer);
       // Replace all lower case letters so verbs are all caps
       for (i=0; i<4; i++) {
         if (islower(buffer[i])) {
@@ -4717,45 +4718,45 @@ processline:
       //
       if (STREQU(buffer, "HELO")) { // Initial greeting
         sprintf(bufferout, "250 Ok\r\n");
-        send(manager->sockfd, bufferout, o_strlen(bufferout), 0);
-        //manager->mail_data = mstrcatf(manager->mail_data, bufferout);
+        send(manager->sockfd, bufferout, u_strlen(bufferout), 0);
+        //manager->mail_data = u_appendf(manager->mail_data, bufferout);
       } else if (STREQU(buffer, "MAIL")) { // New mail from...
         sprintf(bufferout, "250 Ok\r\n");
-        send(manager->sockfd, bufferout, o_strlen(bufferout), 0);
-        //manager->mail_data = mstrcatf(manager->mail_data, bufferout);
+        send(manager->sockfd, bufferout, u_strlen(bufferout), 0);
+        //manager->mail_data = u_appendf(manager->mail_data, bufferout);
       } else if (STREQU(buffer, "RCPT")) { // Mail addressed to...
         sprintf(bufferout, "250 Ok recipient\r\n");
-        send(manager->sockfd, bufferout, o_strlen(bufferout), 0);
-        //manager->mail_data = mstrcatf(manager->mail_data, bufferout);
+        send(manager->sockfd, bufferout, u_strlen(bufferout), 0);
+        //manager->mail_data = u_appendf(manager->mail_data, bufferout);
       } else if (STREQU(buffer, "DATA")) { // Message contents...
         sprintf(bufferout, "354 Continue\r\n");
-        send(manager->sockfd, bufferout, o_strlen(bufferout), 0);
-        //manager->mail_data = mstrcatf(manager->mail_data, bufferout);
+        send(manager->sockfd, bufferout, u_strlen(bufferout), 0);
+        //manager->mail_data = u_appendf(manager->mail_data, bufferout);
         inmessage = 1;
       } else if (STREQU(buffer, "RSET")) { // Reset the connection
         sprintf(bufferout, "250 Ok reset\r\n");
-        send(manager->sockfd, bufferout, o_strlen(bufferout), 0);
-        //manager->mail_data = mstrcatf(manager->mail_data, bufferout);
+        send(manager->sockfd, bufferout, u_strlen(bufferout), 0);
+        //manager->mail_data = u_appendf(manager->mail_data, bufferout);
       } else if (STREQU(buffer, "NOOP")) { // Do nothing.
         sprintf(bufferout, "250 Ok noop\r\n");
-        send(manager->sockfd, bufferout, o_strlen(bufferout), 0);
-        //manager->mail_data = mstrcatf(manager->mail_data, bufferout);
+        send(manager->sockfd, bufferout, u_strlen(bufferout), 0);
+        //manager->mail_data = u_appendf(manager->mail_data, bufferout);
       } else if (STREQU(buffer, "QUIT")) { // Close the connection
         sprintf(bufferout, "221 Ok\r\n");
-        send(manager->sockfd, bufferout, o_strlen(bufferout), 0);
-        //manager->mail_data = mstrcatf(manager->mail_data, bufferout);
+        send(manager->sockfd, bufferout, u_strlen(bufferout), 0);
+        //manager->mail_data = u_appendf(manager->mail_data, bufferout);
         break;
       } else { // The verb used hasn't been implemented.
         sprintf(bufferout, "502 Command Not Implemented\r\n");
-        send(manager->sockfd, bufferout, o_strlen(bufferout), 0);
-        //manager->mail_data = mstrcatf(manager->mail_data, bufferout);
+        send(manager->sockfd, bufferout, u_strlen(bufferout), 0);
+        //manager->mail_data = u_appendf(manager->mail_data, bufferout);
       }
     } else { // We are inside the message after a DATA verb.
-      manager->mail_data = mstrcatf(manager->mail_data, "%s\n", buffer);
+      manager->mail_data = u_appendf(manager->mail_data, "%s\n", buffer);
       if (STREQU(buffer, ".")) { // A single "." signifies the end
         sprintf(bufferout, "250 Ok\r\n");
-        send(manager->sockfd, bufferout, o_strlen(bufferout), 0);
-        //manager->mail_data = mstrcatf(manager->mail_data, bufferout);
+        send(manager->sockfd, bufferout, u_strlen(bufferout), 0);
+        //manager->mail_data = u_appendf(manager->mail_data, bufferout);
         inmessage = 0;
       }
     }
@@ -4823,7 +4824,7 @@ static char * get_file_content(const char * file_path) {
     fseek (f, 0, SEEK_END);
     length = ftell (f);
     fseek (f, 0, SEEK_SET);
-    buffer = o_malloc((length+1)*sizeof(char));
+    buffer = ulfius_malloc((length+1)*sizeof(char));
     if (buffer) {
       res = fread (buffer, 1, length, f);
       if (res != length) {
@@ -4888,7 +4889,7 @@ int callback_function_unauthorized(const struct _u_request * request, struct _u_
 int callback_function_check_auth(const struct _u_request * request, struct _u_response * response, void * user_data) {
   UNUSED(response);
   UNUSED(user_data);
-  if (o_strcmp("user", request->auth_basic_user) == 0 && o_strcmp("password", request->auth_basic_password) == 0) {
+  if (u_strcmp("user", request->auth_basic_user) == 0 && u_strcmp("password", request->auth_basic_password) == 0) {
     return U_CALLBACK_CONTINUE;
   } else {
     return U_CALLBACK_UNAUTHORIZED;
@@ -4900,20 +4901,20 @@ int callback_function_param(const struct _u_request * request, struct _u_respons
   UNUSED(user_data);
 
   if (u_map_has_key(request->map_url, "param3")) {
-    param3 = msprintf(", param3 is %s", u_map_get(request->map_url, "param3"));
+    param3 = u_printf(", param3 is %s", u_map_get(request->map_url, "param3"));
   } else {
-    param3 = o_strdup("");
+    param3 = u_strdup("");
   }
   if (u_map_has_key(request->map_url, "param4")) {
-    param4 = msprintf(", param4 is %s", u_map_get(request->map_url, "param4"));
+    param4 = u_printf(", param4 is %s", u_map_get(request->map_url, "param4"));
   } else {
-    param4 = o_strdup("");
+    param4 = u_strdup("");
   }
-  body = msprintf("param1 is %s, param2 is %s%s%s", u_map_get(request->map_url, "param1"), u_map_get(request->map_url, "param2"), param3, param4);
+  body = u_printf("param1 is %s, param2 is %s%s%s", u_map_get(request->map_url, "param1"), u_map_get(request->map_url, "param2"), param3, param4);
   ulfius_set_string_body_response(response, 200, body);
-  o_free(body);
-  o_free(param3);
-  o_free(param4);
+  u_free(body);
+  u_free(param3);
+  u_free(param4);
   return U_CALLBACK_CONTINUE;
 }
 
@@ -4921,9 +4922,9 @@ int callback_function_body_param(const struct _u_request * request, struct _u_re
   char * body;
   UNUSED(user_data);
 
-  body = msprintf("param1 is %s, param2 is %s", u_map_get(request->map_post_body, "param1"), u_map_get(request->map_post_body, "param2"));
+  body = u_printf("param1 is %s, param2 is %s", u_map_get(request->map_post_body, "param1"), u_map_get(request->map_post_body, "param2"));
   ulfius_set_string_body_response(response, 200, body);
-  o_free(body);
+  u_free(body);
   return U_CALLBACK_CONTINUE;
 }
 
@@ -4931,9 +4932,9 @@ int callback_function_header_param(const struct _u_request * request, struct _u_
   char * body;
   UNUSED(user_data);
 
-  body = msprintf("param1 is %s, param2 is %s", u_map_get(request->map_header, "param1"), u_map_get(request->map_header, "param2"));
+  body = u_printf("param1 is %s, param2 is %s", u_map_get(request->map_header, "param1"), u_map_get(request->map_header, "param2"));
   ulfius_set_string_body_response(response, 200, body);
-  o_free(body);
+  u_free(body);
   return U_CALLBACK_CONTINUE;
 }
 
@@ -4941,7 +4942,7 @@ int callback_function_cookie_param(const struct _u_request * request, struct _u_
   char * body;
   UNUSED(user_data);
 
-  body = msprintf("param1 is %s", u_map_get(request->map_cookie, "param1"));
+  body = u_printf("param1 is %s", u_map_get(request->map_cookie, "param1"));
   ck_assert_int_eq(ulfius_set_string_body_response(response, 200, body), U_OK);
   ck_assert_int_eq(ulfius_add_cookie_to_response(response, "param2", "value_cookie", NULL, 100, "localhost", "/cookie", 0, 1), U_OK);
   ck_assert_int_eq(ulfius_add_same_site_cookie_to_response(response, "cookieSameSiteStrict", "value_cookie", NULL, 100, "localhost", "/cookie", 0, 1, U_COOKIE_SAME_SITE_STRICT), U_OK);
@@ -4949,16 +4950,16 @@ int callback_function_cookie_param(const struct _u_request * request, struct _u_
   ck_assert_int_eq(ulfius_add_same_site_cookie_to_response(response, "cookieSameSiteNone", "value_cookie", NULL, 100, "localhost", "/cookie", 0, 1, U_COOKIE_SAME_SITE_NONE), U_OK);
   ck_assert_int_eq(ulfius_add_same_site_cookie_to_response(response, "cookieSameSiteEmpty", "value_cookie", NULL, 100, "localhost", "/cookie", 0, 1, U_COOKIE_SAME_SITE_EMPTY), U_OK);
   ck_assert_int_ne(ulfius_add_same_site_cookie_to_response(response, "cookieSameSiteError", "value_cookie", NULL, 100, "localhost", "/cookie", 0, 1, 42), U_OK);
-  o_free(body);
+  u_free(body);
   return U_CALLBACK_CONTINUE;
 }
 
 int callback_function_multiple_continue(const struct _u_request * request, struct _u_response * response, void * user_data) {
   UNUSED(user_data);
   if (response->binary_body != NULL) {
-    char * body = msprintf("%.*s\n%s", (int)response->binary_body_length, (char*)response->binary_body, request->http_url);
+    char * body = u_printf("%.*s\n%s", (int)response->binary_body_length, (char*)response->binary_body, request->http_url);
     ulfius_set_string_body_response(response, 200, body);
-    o_free(body);
+    u_free(body);
   } else {
     ulfius_set_string_body_response(response, 200, request->http_url);
   }
@@ -4968,9 +4969,9 @@ int callback_function_multiple_continue(const struct _u_request * request, struc
 int callback_function_multiple_complete(const struct _u_request * request, struct _u_response * response, void * user_data) {
   UNUSED(user_data);
   if (response->binary_body != NULL) {
-    char * body = msprintf("%.*s\n%s", (int)response->binary_body_length, (char*)response->binary_body, request->http_url);
+    char * body = u_printf("%.*s\n%s", (int)response->binary_body_length, (char*)response->binary_body, request->http_url);
     ulfius_set_string_body_response(response, 200, body);
-    o_free(body);
+    u_free(body);
   } else {
     ulfius_set_string_body_response(response, 200, request->http_url);
   }
@@ -4981,27 +4982,27 @@ ssize_t stream_data (void * cls, uint64_t pos, char * buf, size_t max) {
   usleep(100);
   if (pos <= 100) {
       snprintf(buf, max, "%s %" PRIu64 "\n", (char *)cls, pos + 1);
-      return o_strlen(buf);
+      return u_strlen(buf);
   } else {
     return MHD_CONTENT_READER_END_OF_STREAM;
   }
 }
 
 void free_stream_data(void * cls) {
-  o_free(cls);
+  u_free(cls);
 }
 
 int callback_function_stream (const struct _u_request * request, struct _u_response * response, void * user_data) {
   UNUSED(request);
   UNUSED(user_data);
-  ulfius_set_stream_response(response, 200, stream_data, free_stream_data, U_STREAM_SIZE_UNKNOWN, 32 * 1024, o_strdup("stream test"));
+  ulfius_set_stream_response(response, 200, stream_data, free_stream_data, U_STREAM_SIZE_UNKNOWN, 32 * 1024, u_strdup("stream test"));
   return U_CALLBACK_CONTINUE;
 }
 
 size_t my_write_body(void * contents, size_t size, size_t nmemb, void * user_data) {
   UNUSED(user_data);
-  ck_assert_int_eq(o_strncmp((char *)contents, "stream test ", o_strlen("stream test ")), 0);
-  ck_assert_int_ne(strtol((char *)contents + o_strlen("stream test "), NULL, 10), 0);
+  ck_assert_int_eq(u_strncmp((char *)contents, "stream test ", u_strlen("stream test ")), 0);
+  ck_assert_int_ne(strtol((char *)contents + u_strlen("stream test "), NULL, 10), 0);
   return size * nmemb;
 }
 
@@ -5110,7 +5111,7 @@ int shared_data_counter = 0;
 
 static void free_with_counter(void * ptr) {
   shared_data_counter++;
-  o_free(ptr);
+  u_free(ptr);
 }
 
 static void free_json_with_counter(json_t * ptr) {
@@ -5121,9 +5122,9 @@ static void free_json_with_counter(json_t * ptr) {
 int callback_function_shared_data_1(const struct _u_request * request, struct _u_response * response, void * user_data) {
   UNUSED(request);
   UNUSED(user_data);
-  ck_assert_int_eq(ulfius_set_response_shared_data(response, o_strdup("grut"), &free_with_counter), U_OK);
+  ck_assert_int_eq(ulfius_set_response_shared_data(response, u_strdup("grut"), &free_with_counter), U_OK);
   ck_assert_ptr_eq(response->free_shared_data, &free_with_counter);
-  ck_assert_int_eq(0, o_strncmp((const char *)response->shared_data, "grut", o_strlen("grut")));
+  ck_assert_int_eq(0, u_strncmp((const char *)response->shared_data, "grut", u_strlen("grut")));
   return U_CALLBACK_CONTINUE;
 }
 
@@ -5131,10 +5132,10 @@ int callback_function_shared_data_2(const struct _u_request * request, struct _u
   UNUSED(request);
   UNUSED(user_data);
   ck_assert_ptr_eq(response->free_shared_data, &free_with_counter);
-  ck_assert_int_eq(0, o_strncmp((const char *)response->shared_data, "grut", o_strlen("grut")));
+  ck_assert_int_eq(0, u_strncmp((const char *)response->shared_data, "grut", u_strlen("grut")));
   ck_assert_int_eq(ulfius_set_response_shared_data(response, json_string("grut"), (void (*)(void *))&free_json_with_counter), U_OK);
   ck_assert_ptr_eq(response->free_shared_data, &free_json_with_counter);
-  ck_assert_int_eq(0, o_strncmp(json_string_value((json_t *)response->shared_data), "grut", o_strlen("grut")));
+  ck_assert_int_eq(0, u_strncmp(json_string_value((json_t *)response->shared_data), "grut", u_strlen("grut")));
   return U_CALLBACK_CONTINUE;
 }
 
@@ -5146,7 +5147,7 @@ int callback_send_request_no_rest(const struct _u_request * request, struct _u_r
   ck_assert_int_eq(u_map_count(request->map_url), u_map_count(request_orig->map_url));
   keys = u_map_enum_keys(request->map_url);
   for (i=0; keys[i]!=NULL; i++) {
-    if (o_strlen(u_map_get(request->map_url, keys[i]))) {
+    if (u_strlen(u_map_get(request->map_url, keys[i]))) {
       ck_assert_str_eq(u_map_get(request->map_url, keys[i]), u_map_get(request_orig->map_url, keys[i]));
     }
   }
@@ -5167,9 +5168,12 @@ int callback_send_request_rest(const struct _u_request * request, struct _u_resp
 }
 
 int via_free_with_test = 0;
+static pthread_mutex_t free_test_lock = PTHREAD_MUTEX_INITIALIZER;
 
 void free_with_test(void * ptr) {
+  pthread_mutex_lock(&free_test_lock);
   via_free_with_test++;
+  pthread_mutex_unlock(&free_test_lock);
   free(ptr);
 }
 
@@ -5187,15 +5191,15 @@ int callback_function_large_post_urlencoded_check_utf8_no(const struct _u_reques
   ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE2048"), 2048);
   ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE4096"), 4096);
   ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE65536"), 65536);
-  ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE"), o_strlen(VALUE_JSON_LARGE));
-  ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES"), o_strlen(VALUE_JSON_LARGE_NEWLINES));
+  ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE"), u_strlen(VALUE_JSON_LARGE));
+  ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES"), u_strlen(VALUE_JSON_LARGE_NEWLINES));
 
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE1024"), VALUE1024, 1024));
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE2048"), VALUE2048, 2048));
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE4096"), VALUE4096, 4096));
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE65536"), VALUE65536, 65536));
-  ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE_JSON_LARGE"), VALUE_JSON_LARGE, o_strlen(VALUE_JSON_LARGE)));
-  ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES"), VALUE_JSON_LARGE_NEWLINES, o_strlen(VALUE_JSON_LARGE_NEWLINES)));
+  ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE_JSON_LARGE"), VALUE_JSON_LARGE, u_strlen(VALUE_JSON_LARGE)));
+  ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES"), VALUE_JSON_LARGE_NEWLINES, u_strlen(VALUE_JSON_LARGE_NEWLINES)));
 
   json_t * j_value = json_loadb(u_map_get(request->map_post_body, "VALUE_JSON_LARGE"), u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE"), JSON_DECODE_ANY, NULL);
   ck_assert_ptr_ne(j_value, NULL);
@@ -5215,22 +5219,22 @@ int callback_function_large_post_multipart_check_utf8_no(const struct _u_request
   ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE2048"), 2048);
   ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE4096"), 4096);
   ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE65536"), 65536);
-  ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE"), o_strlen(VALUE_JSON_LARGE));
-  ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES"), o_strlen(VALUE_JSON_LARGE_NEWLINES));
+  ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE"), u_strlen(VALUE_JSON_LARGE));
+  ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES"), u_strlen(VALUE_JSON_LARGE_NEWLINES));
 
-  ck_assert_int_eq(o_strlen(u_map_get(request->map_post_body, "VALUE1024")), 1024);
-  ck_assert_int_eq(o_strlen(u_map_get(request->map_post_body, "VALUE2048")), 2048);
-  ck_assert_int_eq(o_strlen(u_map_get(request->map_post_body, "VALUE4096")), 4096);
-  ck_assert_int_eq(o_strlen(u_map_get(request->map_post_body, "VALUE65536")), 65536);
-  ck_assert_int_eq(o_strlen(u_map_get(request->map_post_body, "VALUE_JSON_LARGE")), o_strlen(VALUE_JSON_LARGE));
-  ck_assert_int_eq(o_strlen(u_map_get(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES")), o_strlen(VALUE_JSON_LARGE_NEWLINES));
+  ck_assert_int_eq(u_strlen(u_map_get(request->map_post_body, "VALUE1024")), 1024);
+  ck_assert_int_eq(u_strlen(u_map_get(request->map_post_body, "VALUE2048")), 2048);
+  ck_assert_int_eq(u_strlen(u_map_get(request->map_post_body, "VALUE4096")), 4096);
+  ck_assert_int_eq(u_strlen(u_map_get(request->map_post_body, "VALUE65536")), 65536);
+  ck_assert_int_eq(u_strlen(u_map_get(request->map_post_body, "VALUE_JSON_LARGE")), u_strlen(VALUE_JSON_LARGE));
+  ck_assert_int_eq(u_strlen(u_map_get(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES")), u_strlen(VALUE_JSON_LARGE_NEWLINES));
 
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE1024"), VALUE1024, 1024));
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE2048"), VALUE2048, 2048));
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE4096"), VALUE4096, 4096));
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE65536"), VALUE65536, 65536));
-  ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE_JSON_LARGE"), VALUE_JSON_LARGE, o_strlen(VALUE_JSON_LARGE)));
-  ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES"), VALUE_JSON_LARGE_NEWLINES, o_strlen(VALUE_JSON_LARGE_NEWLINES)));
+  ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE_JSON_LARGE"), VALUE_JSON_LARGE, u_strlen(VALUE_JSON_LARGE)));
+  ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES"), VALUE_JSON_LARGE_NEWLINES, u_strlen(VALUE_JSON_LARGE_NEWLINES)));
 
   ck_assert_int_eq(u_map_get_length(request->map_post_body, "binary_data"), sizeof(binary_data));
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "binary_data"), binary_data, sizeof(binary_data)));
@@ -5256,22 +5260,22 @@ int callback_function_large_post_multipart_check_utf8_yes(const struct _u_reques
   ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE2048"), 2048);
   ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE4096"), 4096);
   ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE65536"), 65536);
-  ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE"), o_strlen(VALUE_JSON_LARGE));
-  ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES"), o_strlen(VALUE_JSON_LARGE_NEWLINES));
+  ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE"), u_strlen(VALUE_JSON_LARGE));
+  ck_assert_int_eq(u_map_get_length(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES"), u_strlen(VALUE_JSON_LARGE_NEWLINES));
 
-  ck_assert_int_eq(o_strlen(u_map_get(request->map_post_body, "VALUE1024")), 1024);
-  ck_assert_int_eq(o_strlen(u_map_get(request->map_post_body, "VALUE2048")), 2048);
-  ck_assert_int_eq(o_strlen(u_map_get(request->map_post_body, "VALUE4096")), 4096);
-  ck_assert_int_eq(o_strlen(u_map_get(request->map_post_body, "VALUE65536")), 65536);
-  ck_assert_int_eq(o_strlen(u_map_get(request->map_post_body, "VALUE_JSON_LARGE")), o_strlen(VALUE_JSON_LARGE));
-  ck_assert_int_eq(o_strlen(u_map_get(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES")), o_strlen(VALUE_JSON_LARGE_NEWLINES));
+  ck_assert_int_eq(u_strlen(u_map_get(request->map_post_body, "VALUE1024")), 1024);
+  ck_assert_int_eq(u_strlen(u_map_get(request->map_post_body, "VALUE2048")), 2048);
+  ck_assert_int_eq(u_strlen(u_map_get(request->map_post_body, "VALUE4096")), 4096);
+  ck_assert_int_eq(u_strlen(u_map_get(request->map_post_body, "VALUE65536")), 65536);
+  ck_assert_int_eq(u_strlen(u_map_get(request->map_post_body, "VALUE_JSON_LARGE")), u_strlen(VALUE_JSON_LARGE));
+  ck_assert_int_eq(u_strlen(u_map_get(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES")), u_strlen(VALUE_JSON_LARGE_NEWLINES));
 
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE1024"), VALUE1024, 1024));
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE2048"), VALUE2048, 2048));
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE4096"), VALUE4096, 4096));
   ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE65536"), VALUE65536, 65536));
-  ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE_JSON_LARGE"), VALUE_JSON_LARGE, o_strlen(VALUE_JSON_LARGE)));
-  ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES"), VALUE_JSON_LARGE_NEWLINES, o_strlen(VALUE_JSON_LARGE_NEWLINES)));
+  ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE_JSON_LARGE"), VALUE_JSON_LARGE, u_strlen(VALUE_JSON_LARGE)));
+  ck_assert_int_eq(0, memcmp(u_map_get(request->map_post_body, "VALUE_JSON_LARGE_NEWLINES"), VALUE_JSON_LARGE_NEWLINES, u_strlen(VALUE_JSON_LARGE_NEWLINES)));
 
   ck_assert_int_eq(u_map_has_key(request->map_post_body, "binary_data"), 0);
   ck_assert_int_eq(u_map_has_key(request->map_post_body, "large_binary_data"), 0);
@@ -5422,18 +5426,18 @@ int callback_auth_client_cert (const struct _u_request * request, struct _u_resp
 
   ck_assert_ptr_ne(request->client_cert, NULL);
   gnutls_x509_crt_get_dn(request->client_cert, NULL, &lbuf);
-  dn = o_malloc(lbuf + 1);
+  dn = ulfius_malloc(lbuf + 1);
   gnutls_x509_crt_get_dn(request->client_cert, dn, &lbuf);
   dn[lbuf] = '\0';
-  ck_assert_ptr_ne(o_strstr(dn, "C=CA"), NULL);
-  ck_assert_ptr_ne(o_strstr(dn, "ST=Quebec"), NULL);
-  ck_assert_ptr_ne(o_strstr(dn, "L=Quebec"), NULL);
-  ck_assert_ptr_ne(o_strstr(dn, "O=Ulfius"), NULL);
-  ck_assert_ptr_ne(o_strstr(dn, "OU=test-client"), NULL);
-  ck_assert_ptr_ne(o_strstr(dn, "CN=localhost"), NULL);
-  ck_assert_ptr_ne(o_strstr(dn, "EMAIL=webmaster@localhost"), NULL);
+  ck_assert_ptr_ne(u_strstr(dn, "C=CA"), NULL);
+  ck_assert_ptr_ne(u_strstr(dn, "ST=Quebec"), NULL);
+  ck_assert_ptr_ne(u_strstr(dn, "L=Quebec"), NULL);
+  ck_assert_ptr_ne(u_strstr(dn, "O=Ulfius"), NULL);
+  ck_assert_ptr_ne(u_strstr(dn, "OU=test-client"), NULL);
+  ck_assert_ptr_ne(u_strstr(dn, "CN=localhost"), NULL);
+  ck_assert_ptr_ne(u_strstr(dn, "EMAIL=webmaster@localhost"), NULL);
   ck_assert_int_eq(ulfius_set_string_body_response(response, 200, dn), U_OK);
-  o_free(dn);
+  u_free(dn);
 
   return U_CALLBACK_CONTINUE;
 }
@@ -5466,7 +5470,7 @@ START_TEST(test_ulfius_simple_endpoint)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/nope");
+  request.http_url = u_strdup("http://localhost:8080/nope");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 404);
@@ -5474,7 +5478,7 @@ START_TEST(test_ulfius_simple_endpoint)
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/empty");
+  request.http_url = u_strdup("http://localhost:8080/empty");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -5482,8 +5486,8 @@ START_TEST(test_ulfius_simple_endpoint)
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_verb = o_strdup("POST");
-  request.http_url = o_strdup("http://localhost:8080/empty");
+  request.http_verb = u_strdup("POST");
+  request.http_url = u_strdup("http://localhost:8080/empty");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -5491,8 +5495,8 @@ START_TEST(test_ulfius_simple_endpoint)
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_verb = o_strdup("PUT");
-  request.http_url = o_strdup("http://localhost:8080/empty");
+  request.http_verb = u_strdup("PUT");
+  request.http_url = u_strdup("http://localhost:8080/empty");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -5500,8 +5504,8 @@ START_TEST(test_ulfius_simple_endpoint)
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_verb = o_strdup("DELETE");
-  request.http_url = o_strdup("http://localhost:8080/empty");
+  request.http_verb = u_strdup("DELETE");
+  request.http_url = u_strdup("http://localhost:8080/empty");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -5509,8 +5513,8 @@ START_TEST(test_ulfius_simple_endpoint)
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_verb = o_strdup("OPTION");
-  request.http_url = o_strdup("http://localhost:8080/empty");
+  request.http_verb = u_strdup("OPTION");
+  request.http_url = u_strdup("http://localhost:8080/empty");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 404);
@@ -5518,36 +5522,36 @@ START_TEST(test_ulfius_simple_endpoint)
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/url");
+  request.http_url = u_strdup("http://localhost:8080/url");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "/url", o_strlen("/url")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "/url", u_strlen("/url")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_verb = o_strdup("OPTION");
-  request.http_url = o_strdup("http://localhost:8080/url");
+  request.http_verb = u_strdup("OPTION");
+  request.http_url = u_strdup("http://localhost:8080/url");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "/url", o_strlen("/url")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "/url", u_strlen("/url")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_verb = o_strdup("test");
-  request.http_url = o_strdup("http://localhost:8080/url");
+  request.http_verb = u_strdup("test");
+  request.http_url = u_strdup("http://localhost:8080/url");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "/url", o_strlen("/url")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "/url", u_strlen("/url")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/error");
+  request.http_url = u_strdup("http://localhost:8080/error");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 500);
@@ -5555,7 +5559,7 @@ START_TEST(test_ulfius_simple_endpoint)
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/unauthorized");
+  request.http_url = u_strdup("http://localhost:8080/unauthorized");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 401);
@@ -5563,9 +5567,9 @@ START_TEST(test_ulfius_simple_endpoint)
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/check_auth");
-  request.auth_basic_user = o_strdup("nope");
-  request.auth_basic_password = o_strdup("nope");
+  request.http_url = u_strdup("http://localhost:8080/check_auth");
+  request.auth_basic_user = u_strdup("nope");
+  request.auth_basic_password = u_strdup("nope");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 401);
@@ -5573,9 +5577,9 @@ START_TEST(test_ulfius_simple_endpoint)
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/check_auth");
-  request.auth_basic_user = o_strdup("user");
-  request.auth_basic_password = o_strdup("password");
+  request.http_url = u_strdup("http://localhost:8080/check_auth");
+  request.auth_basic_user = u_strdup("user");
+  request.auth_basic_password = u_strdup("password");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -5602,7 +5606,7 @@ START_TEST(test_ulfius_net_type_endpoint)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/empty");
+  request.http_url = u_strdup("http://localhost:8080/empty");
   request.network_type = U_USE_IPV4;
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -5612,7 +5616,7 @@ START_TEST(test_ulfius_net_type_endpoint)
 
   if (has_ipv6()) {
     ulfius_init_request(&request);
-    request.http_url = o_strdup("http://[::1]:8080/empty");
+    request.http_url = u_strdup("http://[::1]:8080/empty");
     request.network_type = U_USE_IPV6;
     ulfius_init_response(&response);
     ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -5630,14 +5634,14 @@ START_TEST(test_ulfius_net_type_endpoint)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://127.0.0.1:8080/empty");
+  request.http_url = u_strdup("http://127.0.0.1:8080/empty");
   request.network_type = U_USE_IPV4;
   ck_assert_int_ne(ulfius_send_http_request(&request, NULL), U_OK);
   ulfius_clean_request(&request);
 
   if (has_ipv6()) {
     ulfius_init_request(&request);
-    request.http_url = o_strdup("http://[::1]:8080/empty");
+    request.http_url = u_strdup("http://[::1]:8080/empty");
     request.network_type = U_USE_IPV6;
     ulfius_init_response(&response);
     ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -5655,7 +5659,7 @@ START_TEST(test_ulfius_net_type_endpoint)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/empty");
+  request.http_url = u_strdup("http://localhost:8080/empty");
   request.network_type = U_USE_IPV4;
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -5665,7 +5669,7 @@ START_TEST(test_ulfius_net_type_endpoint)
 
   if (has_ipv6()) {
     ulfius_init_request(&request);
-    request.http_url = o_strdup("http://[::1]:8080/empty");
+    request.http_url = u_strdup("http://[::1]:8080/empty");
     request.network_type = U_USE_IPV6;
     ck_assert_int_ne(ulfius_send_http_request(&request, NULL), U_OK);
     ulfius_clean_request(&request);
@@ -5684,7 +5688,7 @@ START_TEST(test_ulfius_net_type_endpoint)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/empty");
+  request.http_url = u_strdup("http://localhost:8080/empty");
   request.network_type = U_USE_IPV4;
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -5694,7 +5698,7 @@ START_TEST(test_ulfius_net_type_endpoint)
 
   if (has_ipv6()) {
     ulfius_init_request(&request);
-    request.http_url = o_strdup("http://[::1]:8080/empty");
+    request.http_url = u_strdup("http://[::1]:8080/empty");
     request.network_type = U_USE_IPV6;
     ck_assert_int_ne(ulfius_send_http_request(&request, NULL), U_OK);
     ulfius_clean_request(&request);
@@ -5714,13 +5718,13 @@ START_TEST(test_ulfius_net_type_endpoint)
     ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
     ulfius_init_request(&request);
-    request.http_url = o_strdup("http://127.0.0.1:8080/empty");
+    request.http_url = u_strdup("http://127.0.0.1:8080/empty");
     request.network_type = U_USE_IPV4;
     ck_assert_int_ne(ulfius_send_http_request(&request, NULL), U_OK);
     ulfius_clean_request(&request);
 
     ulfius_init_request(&request);
-    request.http_url = o_strdup("http://[::1]:8080/empty");
+    request.http_url = u_strdup("http://[::1]:8080/empty");
     request.network_type = U_USE_IPV6;
     ulfius_init_response(&response);
     ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
@@ -5751,89 +5755,89 @@ START_TEST(test_ulfius_endpoint_parameters)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/param/value1/value2");
+  request.http_url = u_strdup("http://localhost:8080/param/value1/value2");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "param1 is value1, param2 is value2", o_strlen("param1 is value1, param2 is value2")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "param1 is value1, param2 is value2", u_strlen("param1 is value1, param2 is value2")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/param/value1/value2?param4=value4");
+  request.http_url = u_strdup("http://localhost:8080/param/value1/value2?param4=value4");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "param1 is value1, param2 is value2, param4 is value4", o_strlen("param1 is value1, param2 is value2, param4 is value4")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "param1 is value1, param2 is value2, param4 is value4", u_strlen("param1 is value1, param2 is value2, param4 is value4")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/param/value1/value2?param4=value4&param2=additional_value2&param4=additional_value4");
+  request.http_url = u_strdup("http://localhost:8080/param/value1/value2?param4=value4&param2=additional_value2&param4=additional_value4");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "param1 is value1, param2 is additional_value2,value2, param4 is value4,additional_value4", o_strlen("param1 is value1, param2 is additional_value2,value2, param4 is value4,additional_value4")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "param1 is value1, param2 is additional_value2,value2, param4 is value4,additional_value4", u_strlen("param1 is value1, param2 is additional_value2,value2, param4 is value4,additional_value4")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
 #if MHD_VERSION >= 0x00097200
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/param/value1/value2?param4=val%26ue4");
+  request.http_url = u_strdup("http://localhost:8080/param/value1/value2?param4=val%26ue4");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "param1 is value1, param2 is value2, param4 is val&ue4", o_strlen("param1 is value1, param2 is value2, param4 is val&ue4")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "param1 is value1, param2 is value2, param4 is val&ue4", u_strlen("param1 is value1, param2 is value2, param4 is val&ue4")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 #endif
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/param/value1/value2/value3.1/value3.2");
+  request.http_url = u_strdup("http://localhost:8080/param/value1/value2/value3.1/value3.2");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "param1 is value1, param2 is value2, param3 is value3.1,value3.2", o_strlen("param1 is value1, param2 is value2, param3 is value3.1,value3.2")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "param1 is value1, param2 is value2, param3 is value3.1,value3.2", u_strlen("param1 is value1, param2 is value2, param3 is value3.1,value3.2")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_verb = o_strdup("POST");
-  request.http_url = o_strdup("http://localhost:8080/param/");
+  request.http_verb = u_strdup("POST");
+  request.http_url = u_strdup("http://localhost:8080/param/");
   u_map_put(request.map_post_body, "param1", "value3");
   u_map_put(request.map_post_body, "param2", "value4");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "param1 is value3, param2 is value4", o_strlen("param1 is value3, param2 is value4")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "param1 is value3, param2 is value4", u_strlen("param1 is value3, param2 is value4")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/header");
+  request.http_url = u_strdup("http://localhost:8080/header");
   u_map_put(request.map_header, "param1", "value5");
   u_map_put(request.map_header, "param2", "value6");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "param1 is value5, param2 is value6", o_strlen("param1 is value5, param2 is value6")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "param1 is value5, param2 is value6", u_strlen("param1 is value5, param2 is value6")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/cookie");
+  request.http_url = u_strdup("http://localhost:8080/cookie");
   u_map_put(request.map_cookie, "param1", "value7");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "param1 is value7", o_strlen("param1 is value7")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "param1 is value7", u_strlen("param1 is value7")), 0);
 
   set_cookie = u_map_get(response.map_header, "Set-Cookie");
-  ck_assert_ptr_ne(o_strstr(set_cookie, "param2=value_cookie; Max-Age=100; Domain=localhost; Path=/cookie; HttpOnly"), NULL);
-  ck_assert_ptr_ne(o_strstr(set_cookie, "cookieSameSiteNone=value_cookie; Max-Age=100; Domain=localhost; Path=/cookie; HttpOnly; SameSite=None"), NULL);
-  ck_assert_ptr_ne(o_strstr(set_cookie, "cookieSameSiteStrict=value_cookie; Max-Age=100; Domain=localhost; Path=/cookie; HttpOnly; SameSite=Strict"), NULL);
-  ck_assert_ptr_ne(o_strstr(set_cookie, "cookieSameSiteLax=value_cookie; Max-Age=100; Domain=localhost; Path=/cookie; HttpOnly; SameSite=Lax"), NULL);
-  ck_assert_ptr_ne(o_strstr(set_cookie, "cookieSameSiteEmpty=value_cookie; Max-Age=100; Domain=localhost; Path=/cookie; HttpOnly"), NULL);
+  ck_assert_ptr_ne(u_strstr(set_cookie, "param2=value_cookie; Max-Age=100; Domain=localhost; Path=/cookie; HttpOnly"), NULL);
+  ck_assert_ptr_ne(u_strstr(set_cookie, "cookieSameSiteNone=value_cookie; Max-Age=100; Domain=localhost; Path=/cookie; HttpOnly; SameSite=None"), NULL);
+  ck_assert_ptr_ne(u_strstr(set_cookie, "cookieSameSiteStrict=value_cookie; Max-Age=100; Domain=localhost; Path=/cookie; HttpOnly; SameSite=Strict"), NULL);
+  ck_assert_ptr_ne(u_strstr(set_cookie, "cookieSameSiteLax=value_cookie; Max-Age=100; Domain=localhost; Path=/cookie; HttpOnly; SameSite=Lax"), NULL);
+  ck_assert_ptr_ne(u_strstr(set_cookie, "cookieSameSiteEmpty=value_cookie; Max-Age=100; Domain=localhost; Path=/cookie; HttpOnly"), NULL);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
@@ -5853,7 +5857,7 @@ START_TEST(test_ulfius_endpoint_injection)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/inject1");
+  request.http_url = u_strdup("http://localhost:8080/inject1");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -5861,7 +5865,7 @@ START_TEST(test_ulfius_endpoint_injection)
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/inject2");
+  request.http_url = u_strdup("http://localhost:8080/inject2");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 404);
@@ -5871,7 +5875,7 @@ START_TEST(test_ulfius_endpoint_injection)
   ck_assert_int_eq(ulfius_add_endpoint_by_val(&u_instance, "GET", "inject2", NULL, 0, &callback_function_empty, NULL), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/inject2");
+  request.http_url = u_strdup("http://localhost:8080/inject2");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -5881,7 +5885,7 @@ START_TEST(test_ulfius_endpoint_injection)
   ck_assert_int_eq(ulfius_remove_endpoint_by_val(&u_instance, "GET", "inject2", NULL), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/inject2");
+  request.http_url = u_strdup("http://localhost:8080/inject2");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 404);
@@ -5911,43 +5915,43 @@ START_TEST(test_ulfius_endpoint_multiple)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/multiple");
+  request.http_url = u_strdup("http://localhost:8080/multiple");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "/multiple", o_strlen("/multiple")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "/multiple", u_strlen("/multiple")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/multiple/value1");
+  request.http_url = u_strdup("http://localhost:8080/multiple/value1");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "/multiple/value1\n/multiple/value1", o_strlen("/multiple/value1\n/multiple/value1")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "/multiple/value1\n/multiple/value1", u_strlen("/multiple/value1\n/multiple/value1")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/multiple/value1/value2");
+  request.http_url = u_strdup("http://localhost:8080/multiple/value1/value2");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "/multiple/value1/value2\n/multiple/value1/value2\n/multiple/value1/value2", o_strlen("/multiple/value1/value2\n/multiple/value1/value2\n/multiple/value1/value2")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "/multiple/value1/value2\n/multiple/value1/value2\n/multiple/value1/value2", u_strlen("/multiple/value1/value2\n/multiple/value1/value2\n/multiple/value1/value2")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/multiple/value1/value2/value3");
+  request.http_url = u_strdup("http://localhost:8080/multiple/value1/value2/value3");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "/multiple/value1/value2/value3\n/multiple/value1/value2/value3\n/multiple/value1/value2/value3\n/multiple/value1/value2/value3", o_strlen("/multiple/value1/value2/value3\n/multiple/value1/value2/value3\n/multiple/value1/value2/value3\n/multiple/value1/value2/value3")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "/multiple/value1/value2/value3\n/multiple/value1/value2/value3\n/multiple/value1/value2/value3\n/multiple/value1/value2/value3", u_strlen("/multiple/value1/value2/value3\n/multiple/value1/value2/value3\n/multiple/value1/value2/value3\n/multiple/value1/value2/value3")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/nope/value1/value2/value3/value4");
+  request.http_url = u_strdup("http://localhost:8080/nope/value1/value2/value3/value4");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 404);
@@ -5955,11 +5959,11 @@ START_TEST(test_ulfius_endpoint_multiple)
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/multiple_complete/value1/value2/value3");
+  request.http_url = u_strdup("http://localhost:8080/multiple_complete/value1/value2/value3");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, "/multiple_complete/value1/value2/value3\n/multiple_complete/value1/value2/value3", o_strlen("/multiple_complete/value1/value2/value3\n/multiple_complete/value1/value2/value3")), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, "/multiple_complete/value1/value2/value3\n/multiple_complete/value1/value2/value3", u_strlen("/multiple_complete/value1/value2/value3\n/multiple_complete/value1/value2/value3")), 0);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
@@ -5981,7 +5985,7 @@ START_TEST(test_ulfius_endpoint_multiple_with_unauthorized)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/multiple/value");
+  request.http_url = u_strdup("http://localhost:8080/multiple/value");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 401);
@@ -6008,11 +6012,11 @@ START_TEST(test_ulfius_endpoint_multiple_with_error)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/multiple/value");
+  request.http_url = u_strdup("http://localhost:8080/multiple/value");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 500);
-  ck_assert_int_eq(response.binary_body_length, o_strlen(ULFIUS_HTTP_ERROR_BODY));
+  ck_assert_int_eq(response.binary_body_length, u_strlen(ULFIUS_HTTP_ERROR_BODY));
   ck_assert_int_eq(0, memcmp(response.binary_body, ULFIUS_HTTP_ERROR_BODY, response.binary_body_length));
   ck_assert_int_eq(counter, 1);
   ulfius_clean_request(&request);
@@ -6036,7 +6040,7 @@ START_TEST(test_ulfius_endpoint_multiple_with_complete)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/multiple/value");
+  request.http_url = u_strdup("http://localhost:8080/multiple/value");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -6063,7 +6067,7 @@ START_TEST(test_ulfius_endpoint_multiple_with_continue)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/multiple/value");
+  request.http_url = u_strdup("http://localhost:8080/multiple/value");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 208);
@@ -6090,7 +6094,7 @@ START_TEST(test_ulfius_endpoint_multiple_with_ignore)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/multiple/value");
+  request.http_url = u_strdup("http://localhost:8080/multiple/value");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 208);
@@ -6115,7 +6119,7 @@ START_TEST(test_ulfius_endpoint_stream)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/stream");
+  request.http_url = u_strdup("http://localhost:8080/stream");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_streaming_request(&request, &response, my_write_body, NULL), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -6163,9 +6167,9 @@ END_TEST
 
 START_TEST(test_ulfius_utf8_not_ignored)
 {
-  char * invalid_utf8_seq2 = msprintf("value %c%c", 0xC3, 0x28);
-  char * invalid_utf8_seq3 = msprintf("value %c%c%c", 0xE2, 0x28, 0xA1);
-  char * invalid_utf8_seq4 = msprintf("value %c%c%c%c", 0xF0, 0x90, 0x28, 0xBC);
+  char * invalid_utf8_seq2 = u_printf("value %c%c", 0xC3, 0x28);
+  char * invalid_utf8_seq3 = u_printf("value %c%c%c", 0xE2, 0x28, 0xA1);
+  char * invalid_utf8_seq4 = u_printf("value %c%c%c%c", 0xF0, 0x90, 0x28, 0xBC);
   char * valid_utf8 = "valid value ȸ Ɇ  ɤ ¯\\_(ツ)_¯";
   char * valid_utf8_cookie = "va-lid=value";
   struct _u_instance u_instance;
@@ -6180,12 +6184,12 @@ START_TEST(test_ulfius_utf8_not_ignored)
 
   ulfius_init_request(&request);
   ulfius_init_response(&response);
-  request.http_url = msprintf("http://localhost:8080/utf8/%s/%s/?utf8_param_valid1=%s&utf8_param_valid2=%s&utf8_param_empty=&utf8_param_null",
+  request.http_url = u_printf("http://localhost:8080/utf8/%s/%s/?utf8_param_valid1=%s&utf8_param_valid2=%s&utf8_param_empty=&utf8_param_null",
                               invalid_utf8_seq3,
                               valid_utf8,
                               invalid_utf8_seq2,
                               valid_utf8);
-  request.http_verb = o_strdup("POST");
+  request.http_verb = u_strdup("POST");
   u_map_put(request.map_header, "utf8_param", invalid_utf8_seq3);
   u_map_put(request.map_header, "utf8_param_valid", valid_utf8);
   u_map_put(request.map_cookie, "utf8_param_valid", valid_utf8_cookie);
@@ -6198,9 +6202,9 @@ START_TEST(test_ulfius_utf8_not_ignored)
   ck_assert_int_eq(i, 1);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
-  o_free(invalid_utf8_seq2);
-  o_free(invalid_utf8_seq3);
-  o_free(invalid_utf8_seq4);
+  u_free(invalid_utf8_seq2);
+  u_free(invalid_utf8_seq3);
+  u_free(invalid_utf8_seq4);
   ulfius_stop_framework(&u_instance);
   ulfius_clean_instance(&u_instance);
 }
@@ -6208,9 +6212,9 @@ END_TEST
 
 START_TEST(test_ulfius_utf8_ignored)
 {
-  char * invalid_utf8_seq2 = msprintf("invalid value %c%c", 0xC3, 0x28);
-  char * invalid_utf8_seq3 = msprintf("invalid value %c%c%c", 0xE2, 0x28, 0xA1);
-  char * invalid_utf8_seq4 = msprintf("invalid value %c%c%c%c", 0xF0, 0x90, 0x28, 0xBC);
+  char * invalid_utf8_seq2 = u_printf("invalid value %c%c", 0xC3, 0x28);
+  char * invalid_utf8_seq3 = u_printf("invalid value %c%c%c", 0xE2, 0x28, 0xA1);
+  char * invalid_utf8_seq4 = u_printf("invalid value %c%c%c%c", 0xF0, 0x90, 0x28, 0xBC);
   char * valid_utf8 = "valid value ȸ Ɇ  ɤ ¯\\_(ツ)_¯";
   char * valid_utf8_cookie = "va-lid=value";
   struct _u_instance u_instance;
@@ -6225,12 +6229,12 @@ START_TEST(test_ulfius_utf8_ignored)
 
   ulfius_init_request(&request);
   ulfius_init_response(&response);
-  request.http_url = msprintf("http://localhost:8080/utf8/%s/%s/?utf8_param_invalid_url1=%s&utf8_param_valid_url2=%s&utf8_param_empty=&utf8_param_null",
+  request.http_url = u_printf("http://localhost:8080/utf8/%s/%s/?utf8_param_invalid_url1=%s&utf8_param_valid_url2=%s&utf8_param_empty=&utf8_param_null",
                               invalid_utf8_seq3,
                               valid_utf8,
                               invalid_utf8_seq2,
                               valid_utf8);
-  request.http_verb = o_strdup("POST");
+  request.http_verb = u_strdup("POST");
   u_map_put(request.map_header, "utf8_param", invalid_utf8_seq3);
   u_map_put(request.map_header, "utf8_param_valid", valid_utf8);
   u_map_put(request.map_cookie, "utf8_param_valid", valid_utf8_cookie);
@@ -6243,9 +6247,9 @@ START_TEST(test_ulfius_utf8_ignored)
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
-  o_free(invalid_utf8_seq2);
-  o_free(invalid_utf8_seq3);
-  o_free(invalid_utf8_seq4);
+  u_free(invalid_utf8_seq2);
+  u_free(invalid_utf8_seq3);
+  u_free(invalid_utf8_seq4);
   ulfius_stop_framework(&u_instance);
   ulfius_clean_instance(&u_instance);
 }
@@ -6264,7 +6268,7 @@ START_TEST(test_ulfius_endpoint_callback_position)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/callback_position");
+  request.http_url = u_strdup("http://localhost:8080/callback_position");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -6282,13 +6286,15 @@ START_TEST(test_ulfius_MHD_set_response_with_other_free)
   struct _u_request request;
   struct _u_response response;
 
-  o_set_alloc_funcs(&malloc, &realloc, &free_with_test);
+  pthread_mutex_lock(&free_test_lock);
+  via_free_with_test = 0;
+  pthread_mutex_unlock(&free_test_lock);
   ck_assert_int_eq(ulfius_init_instance(&u_instance, 8080, NULL, NULL), U_OK);
   ck_assert_int_eq(ulfius_add_endpoint_by_val(&u_instance, "GET", "/", NULL, 0, &callback_function_return_url, NULL), U_OK);
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/");
+  request.http_url = u_strdup("http://localhost:8080/");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -6299,7 +6305,9 @@ START_TEST(test_ulfius_MHD_set_response_with_other_free)
   ulfius_clean_instance(&u_instance);
   // We can only test that via_free_with_test has been incremented.
   // The only way to know for sure now is to verify with valgrind and the memory consumption
+  pthread_mutex_lock(&free_test_lock);
   ck_assert_int_gt(via_free_with_test, 1);
+  pthread_mutex_unlock(&free_test_lock);
 }
 END_TEST
 
@@ -6326,14 +6334,14 @@ START_TEST(test_ulfius_send_smtp)
 
   ck_assert_int_eq(ulfius_send_smtp_email("localhost", PORT_PLAIN, 0, 0, NULL, NULL, FROM, TO, CC, BCC, SUBJECT, BODY), U_OK);
   pthread_join(thread, NULL);
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "HELO"));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "MAIL FROM:<" FROM ">"));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "RCPT TO:<" TO ">"));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "RCPT TO:<" CC ">"));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "RCPT TO:<" BCC ">"));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "Subject: " SUBJECT));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, BODY));
-  o_free(manager.mail_data);
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "HELO"));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "MAIL FROM:<" FROM ">"));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "RCPT TO:<" TO ">"));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "RCPT TO:<" CC ">"));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "RCPT TO:<" BCC ">"));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "Subject: " SUBJECT));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, BODY));
+  u_free(manager.mail_data);
   manager.mail_data = NULL;
 }
 END_TEST
@@ -6355,15 +6363,15 @@ START_TEST(test_ulfius_send_rich_smtp)
 
   ck_assert_int_eq(ulfius_send_smtp_rich_email("localhost", PORT_RICH, 0, 0, NULL, NULL, FROM, TO, CC, BCC, CONTENT_TYPE, SUBJECT, BODY), U_OK);
   pthread_join(thread, NULL);
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "HELO"));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "MAIL FROM:<" FROM ">"));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "RCPT TO:<" TO ">"));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "RCPT TO:<" CC ">"));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "RCPT TO:<" BCC ">"));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "Content-Type: " CONTENT_TYPE));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, "Subject: " SUBJECT));
-  ck_assert_ptr_ne(NULL, o_strstr(manager.mail_data, BODY));
-  o_free(manager.mail_data);
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "HELO"));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "MAIL FROM:<" FROM ">"));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "RCPT TO:<" TO ">"));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "RCPT TO:<" CC ">"));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "RCPT TO:<" BCC ">"));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "Content-Type: " CONTENT_TYPE));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, "Subject: " SUBJECT));
+  ck_assert_ptr_ne(NULL, u_strstr(manager.mail_data, BODY));
+  u_free(manager.mail_data);
   manager.mail_data = NULL;
 }
 END_TEST
@@ -6380,18 +6388,18 @@ START_TEST(test_ulfius_follow_redirect)
   ck_assert_int_eq(ulfius_start_framework(&u_instance), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("http://localhost:8080/first");
+  request.http_url = u_strdup("http://localhost:8080/first");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 302);
   ck_assert_str_eq(u_map_get(response.map_header, "Location"), "/last");
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, BODY_NOT_REDIRECTED, o_strlen(BODY_NOT_REDIRECTED)), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, BODY_NOT_REDIRECTED, u_strlen(BODY_NOT_REDIRECTED)), 0);
   ulfius_clean_response(&response);
 
   ulfius_init_response(&response);
   request.follow_redirect = 1;
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
-  ck_assert_int_eq(o_strncmp((const char *)response.binary_body, BODY_REDIRECTED, o_strlen(BODY_REDIRECTED)), 0);
+  ck_assert_int_eq(u_strncmp((const char *)response.binary_body, BODY_REDIRECTED, u_strlen(BODY_REDIRECTED)), 0);
   ck_assert_int_eq(response.status, 200);
   ulfius_clean_response(&response);
 
@@ -6480,37 +6488,37 @@ START_TEST(test_ulfius_malformed_requests)
   close(socket);
 
   ck_assert_int_gt(socket = socket_connect_localhost(8080), -1);
-  send(socket, request_1, o_strlen(request_1), MSG_NOSIGNAL);
+  send(socket, request_1, u_strlen(request_1), MSG_NOSIGNAL);
   shutdown(socket, SHUT_WR);
   close(socket);
 
   ck_assert_int_gt(socket = socket_connect_localhost(8080), -1);
-  send(socket, request_2, o_strlen(request_2), MSG_NOSIGNAL);
+  send(socket, request_2, u_strlen(request_2), MSG_NOSIGNAL);
   shutdown(socket, SHUT_WR);
   close(socket);
 
   ck_assert_int_gt(socket = socket_connect_localhost(8080), -1);
-  send(socket, request_3, o_strlen(request_3), MSG_NOSIGNAL);
+  send(socket, request_3, u_strlen(request_3), MSG_NOSIGNAL);
   shutdown(socket, SHUT_WR);
   close(socket);
 
   ck_assert_int_gt(socket = socket_connect_localhost(8080), -1);
-  send(socket, request_4, o_strlen(request_4), MSG_NOSIGNAL);
+  send(socket, request_4, u_strlen(request_4), MSG_NOSIGNAL);
   shutdown(socket, SHUT_WR);
   close(socket);
 
   ck_assert_int_gt(socket = socket_connect_localhost(8080), -1);
-  send(socket, request_5, o_strlen(request_5), MSG_NOSIGNAL);
+  send(socket, request_5, u_strlen(request_5), MSG_NOSIGNAL);
   shutdown(socket, SHUT_WR);
   close(socket);
 
   ck_assert_int_gt(socket = socket_connect_localhost(8080), -1);
-  send(socket, request_6, o_strlen(request_6), MSG_NOSIGNAL);
+  send(socket, request_6, u_strlen(request_6), MSG_NOSIGNAL);
   shutdown(socket, SHUT_WR);
   close(socket);
 
   ck_assert_int_gt(socket = socket_connect_localhost(8080), -1);
-  send(socket, request_7, o_strlen(request_7), MSG_NOSIGNAL);
+  send(socket, request_7, u_strlen(request_7), MSG_NOSIGNAL);
   shutdown(socket, SHUT_WR);
   close(socket);
 
@@ -7017,9 +7025,9 @@ START_TEST(test_ulfius_server_ca_trust)
   ck_assert_int_ne(ulfius_start_secure_ca_trust_framework(&u_instance, key, NULL, ca), U_OK);
   ck_assert_int_eq(ulfius_start_secure_ca_trust_framework(&u_instance, key, cert, ca), U_OK);
 
-  o_free(cert);
-  o_free(key);
-  o_free(ca);
+  u_free(cert);
+  u_free(key);
+  u_free(ca);
   ulfius_stop_framework(&u_instance);
   ulfius_clean_instance(&u_instance);
 }
@@ -7041,9 +7049,9 @@ START_TEST(test_ulfius_client_certificate)
   ck_assert_int_eq(ulfius_start_secure_ca_trust_framework(&u_instance, key, cert, ca), U_OK);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("https://localhost:8080/nocert_auth");
+  request.http_url = u_strdup("https://localhost:8080/nocert_auth");
   request.check_server_certificate = 0;
-  request.client_key_file = o_strdup("cert/client1.key");
+  request.client_key_file = u_strdup("cert/client1.key");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -7051,9 +7059,9 @@ START_TEST(test_ulfius_client_certificate)
   ulfius_clean_response(&response);
 
   ulfius_init_request(&request);
-  request.http_url = o_strdup("https://localhost:8080/nocert_auth");
+  request.http_url = u_strdup("https://localhost:8080/nocert_auth");
   request.check_server_certificate = 0;
-  request.client_cert_file = o_strdup("cert/client1.crt");
+  request.client_cert_file = u_strdup("cert/client1.crt");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -7062,10 +7070,10 @@ START_TEST(test_ulfius_client_certificate)
 
   // Test with a valid certificate signed by the expected CA (root1)
   ulfius_init_request(&request);
-  request.http_url = o_strdup("https://localhost:8080/cert_auth");
+  request.http_url = u_strdup("https://localhost:8080/cert_auth");
   request.check_server_certificate = 0;
-  request.client_cert_file = o_strdup("cert/client1.crt");
-  request.client_key_file = o_strdup("cert/client1.key");
+  request.client_cert_file = u_strdup("cert/client1.crt");
+  request.client_key_file = u_strdup("cert/client1.key");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -7074,10 +7082,10 @@ START_TEST(test_ulfius_client_certificate)
 
   // Test with a valid certificate signed by another CA (root2)
   ulfius_init_request(&request);
-  request.http_url = o_strdup("https://localhost:8080/nocert_auth");
+  request.http_url = u_strdup("https://localhost:8080/nocert_auth");
   request.check_server_certificate = 0;
-  request.client_cert_file = o_strdup("cert/client2.crt");
-  request.client_key_file = o_strdup("cert/client2.key");
+  request.client_cert_file = u_strdup("cert/client2.crt");
+  request.client_key_file = u_strdup("cert/client2.key");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ck_assert_int_eq(response.status, 200);
@@ -7086,18 +7094,18 @@ START_TEST(test_ulfius_client_certificate)
 
   // Test with a certificate self-signed (client3)
   ulfius_init_request(&request);
-  request.http_url = o_strdup("https://localhost:8080/nocert_auth");
+  request.http_url = u_strdup("https://localhost:8080/nocert_auth");
   request.check_server_certificate = 0;
-  request.client_cert_file = o_strdup("cert/client3.crt");
-  request.client_key_file = o_strdup("cert/client3.key");
+  request.client_cert_file = u_strdup("cert/client3.crt");
+  request.client_key_file = u_strdup("cert/client3.key");
   ulfius_init_response(&response);
   ck_assert_int_eq(ulfius_send_http_request(&request, &response), U_OK);
   ulfius_clean_request(&request);
   ulfius_clean_response(&response);
 
-  o_free(cert);
-  o_free(key);
-  o_free(ca);
+  u_free(cert);
+  u_free(key);
+  u_free(ca);
   ulfius_stop_framework(&u_instance);
   ulfius_clean_instance(&u_instance);
 }
@@ -7156,6 +7164,7 @@ int main(void)
   int number_failed;
   Suite *s;
   SRunner *sr;
+  if (ulfius_set_alloc_funcs(&malloc, &realloc, &free_with_test) != U_OK) return EXIT_FAILURE;
   ulfius_global_init();
   s = ulfius_suite();
   sr = srunner_create(s);

@@ -41,16 +41,10 @@ For example, to install all the external dependencies on Debian Stretch, run as 
 
 ### Good ol' Makefile
 
-Download Orcania and Ulfius source code from GitHub, install Orcania, then Ulfius:
-
-Last Orcania release: [https://github.com/babelouest/orcania/releases/latest/](https://github.com/babelouest/orcania/releases/latest/)
-Last Ulfius release: [https://github.com/mtekresearchllc/ulfius/releases/latest/](https://github.com/mtekresearchllc/ulfius/releases/latest/)
-
-**Note: Make sure all the previous installed version of those libraries, via a package manager for example, are removed.**
+Download [Ulfius](https://github.com/mtekresearchllc/ulfius/releases/latest/)
+and build it directly; Orcania and Yder are no longer dependencies.
 
 ```shell
-$ cd <orcania_source>
-$ make && sudo make install
 $ cd <ulfius_source>
 $ make && sudo make install
 ```
@@ -65,7 +59,7 @@ $ make CURLFLAG=1
 
 If libcurl functions are disabled, `libcurl4-gnutls-dev` is no longer mandatory for install.
 
-To disable libjansson functions, append the option `JANSSONFLAG=1` to the make command when you build Ulfius and Orcania:
+To disable libjansson functions, append the option `JANSSONFLAG=1` to the make command when you build Ulfius:
 
 ```shell
 $ make JANSSONFLAG=1
@@ -154,7 +148,7 @@ Those two options are exclusive, you can't use them both at the same time.
 
 #### Installation directory
 
-By default, the shared libraries and the header files will be installed in the `/usr/local` location. To change this setting, you can modify the `DESTDIR` value in `src/Makefile` and `lib/orcania/src/Makefile`.
+By default, the shared libraries and the header files will be installed in the `/usr/local` location. To change this setting, you can modify the `DESTDIR` value in the `src/Makefile` file.
 
 ```shell
 $ make DESTDIR=/tmp install # to install ulfius in /tmp/lib for example

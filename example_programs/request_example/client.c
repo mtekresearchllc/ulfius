@@ -12,6 +12,7 @@
  */
 
 #include <jansson.h>
+#include "u_string.h"
 #include <string.h>
 #include <ulfius.h>
 
@@ -35,20 +36,20 @@ char * print_map(const struct _u_map * map) {
     for (i=0; keys[i] != NULL; i++) {
       value = u_map_get(map, keys[i]);
       len = snprintf(NULL, 0, "key is %s, value is %s", keys[i], value);
-      line = o_malloc((size_t)(len+1));
+      line = ulfius_malloc((size_t)(len+1));
       snprintf(line, (size_t)(len+1), "key is %s, value is %s", keys[i], value);
       if (to_return != NULL) {
-        len = (int)(o_strlen(to_return) + o_strlen(line) + 1);
-        to_return = o_realloc(to_return, (size_t)(len+1));
-        if (o_strlen(to_return) > 0) {
+        len = (int)(u_strlen(to_return) + u_strlen(line) + 1);
+        to_return = ulfius_realloc(to_return, (size_t)(len+1));
+        if (u_strlen(to_return) > 0) {
           strcat(to_return, "\n");
         }
       } else {
-        to_return = o_malloc((o_strlen(line) + 1));
+        to_return = ulfius_malloc((u_strlen(line) + 1));
         to_return[0] = 0;
       }
       strcat(to_return, line);
-      o_free(line);
+      u_free(line);
     }
     return to_return;
   } else {
@@ -60,11 +61,11 @@ void print_response(struct _u_response * response) {
   if (response != NULL) {
     char * headers = print_map(response->map_header);
     char response_body[response->binary_body_length + 1];
-    o_strncpy(response_body, (const char *)response->binary_body, response->binary_body_length);
+    u_strncpy(response_body, (const char *)response->binary_body, response->binary_body_length);
     response_body[response->binary_body_length] = '\0';
     printf("protocol is\n%s\n\n  headers are \n%s\n\n  body is \n%s\n\n",
            response->protocol, headers, response_body);
-    o_free(headers);
+    u_free(headers);
   }
 }
 
@@ -72,11 +73,11 @@ void print_response_limit(struct _u_response * response) {
   if (response != NULL) {
     char * headers = print_map(response->map_header);
     char response_body[response->binary_body_length + 1];
-    o_strncpy(response_body, (const char *)response->binary_body, response->binary_body_length);
+    u_strncpy(response_body, (const char *)response->binary_body, response->binary_body_length);
     response_body[response->binary_body_length] = '\0';
     printf("protocol is\n%s\n\n  headers (%u) are \n%s\n\n  body (%zu) is \n'%s'\n\n",
            response->protocol, u_map_count(response->map_header), headers, response->binary_body_length, response_body);
-    o_free(headers);
+    u_free(headers);
   }
 }
 
@@ -127,7 +128,7 @@ int main (void) {
                                 U_OPT_HTTP_URL, SERVER_URL_PREFIX,
                                 U_OPT_HTTP_URL_APPEND, "/post/param/",
                                 U_OPT_TIMEOUT, 20,
-                                U_OPT_BINARY_BODY, string_body, o_strlen(string_body),
+                                U_OPT_BINARY_BODY, string_body, u_strlen(string_body),
                                 U_OPT_POST_BODY_PARAMETER, "third_test", "three",
                                 U_OPT_POST_BODY_PARAMETER, "fourth_test", "four",
                                 U_OPT_POST_BODY_PARAMETER, "extreme_test", "Here ! are %9_ some $ ö\\)]= special châraçters",
@@ -139,7 +140,7 @@ int main (void) {
                                 U_OPT_HTTP_URL, SERVER_URL_PREFIX,
                                 U_OPT_HTTP_URL_APPEND, "/post/plain/",
                                 U_OPT_TIMEOUT, 20,
-                                U_OPT_BINARY_BODY, string_body, o_strlen(string_body),
+                                U_OPT_BINARY_BODY, string_body, u_strlen(string_body),
                                 U_OPT_HEADER_PARAMETER, "Content-Type", MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
                                 U_OPT_NONE); // Required to close the parameters list
   
@@ -160,7 +161,7 @@ int main (void) {
                                 U_OPT_HTTP_URL, SERVER_URL_PREFIX,
                                 U_OPT_HTTP_URL_APPEND, "/put/plain/",
                                 U_OPT_TIMEOUT, 20,
-                                U_OPT_BINARY_BODY, string_body, o_strlen(string_body),
+                                U_OPT_BINARY_BODY, string_body, u_strlen(string_body),
                                 U_OPT_HEADER_PARAMETER, "Content-Type", MHD_HTTP_POST_ENCODING_FORM_URLENCODED,
                                 U_OPT_NONE); // Required to close the parameters list
   

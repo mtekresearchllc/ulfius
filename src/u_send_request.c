@@ -32,6 +32,8 @@
 #endif
 
 #include <u_private.h>
+#include "u_token.h"
+#include "u_string.h"
 #include <ulfius.h>
 
 #ifndef U_DISABLE_CURL
@@ -101,7 +103,7 @@ static size_t ulfius_write_body(void * contents, size_t size, size_t nmemb, void
     }
   }
   if (cur_size) {
-    body_data->data = o_realloc(body_data->data, body_data->size + cur_size + 1);
+    body_data->data = ulfius_realloc(body_data->data, body_data->size + cur_size + 1);
     if(body_data->data == NULL) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for body_data->data");
       return 0;
@@ -138,29 +140,29 @@ static size_t write_header(void * buffer, size_t size, size_t nitems, void * use
   char * header = (char *)buffer, * saveptr, * tmp;
   const char * key, * value;
 
-  if (o_strchr(header, ':') != NULL) {
+  if (u_strchr(header, ':') != NULL) {
     if (!response_header->max_header || response_header->counter < response_header->max_header) {
       // Expecting a header (key: value)
-      key = trimwhitespace(strtok_r(header, ":", &saveptr));
-      value = trimwhitespace(strtok_r(NULL, "", &saveptr));
+      key = u_trimwhitespace(strtok_r(header, ":", &saveptr));
+      value = u_trimwhitespace(strtok_r(NULL, "", &saveptr));
 
       if (!u_map_has_key_case(response_header->response->map_header, key)) {
         u_map_put(response_header->response->map_header, key, value);
       } else {
-        tmp = msprintf("%s, %s", u_map_get_case(response_header->response->map_header, key), value);
+        tmp = u_printf("%s, %s", u_map_get_case(response_header->response->map_header, key), value);
         if (u_map_remove_from_key_case(response_header->response->map_header, key) != U_OK || u_map_put(response_header->response->map_header, key, tmp)) {
           ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting header value for name %s", key);
         }
-        o_free(tmp);
+        u_free(tmp);
       }
       response_header->counter++;
     }
-  } else if (!o_strnullempty(trimwhitespace(header))) {
+  } else if (!u_strnullempty(u_trimwhitespace(header))) {
     // Expecting the HTTP/x.x header
     if (response_header->response->protocol != NULL) {
-      o_free(response_header->response->protocol);
+      u_free(response_header->response->protocol);
     }
-    response_header->response->protocol = o_strdup(header);
+    response_header->response->protocol = u_strdup(header);
     if (response_header->response->protocol == NULL) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->protocol");
       return 0;
@@ -203,19 +205,19 @@ int ulfius_send_http_request(const struct _u_request * request, struct _u_respon
   }
   if (res == U_OK && response != NULL) {
     if (body_data.data != NULL && body_data.size) {
-      response->binary_body = o_malloc(body_data.size);
+      response->binary_body = ulfius_malloc(body_data.size);
       if (response->binary_body == NULL) {
         ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->binary_body");
-        o_free(body_data.data);
+        u_free(body_data.data);
         return U_ERROR_MEMORY;
       }
       memcpy(response->binary_body, body_data.data, body_data.size);
       response->binary_body_length = body_data.size;
     }
-    o_free(body_data.data);
+    u_free(body_data.data);
     return U_OK;
   } else {
-    o_free(body_data.data);
+    u_free(body_data.data);
     return res;
   }
 }
@@ -241,19 +243,19 @@ int ulfius_send_http_request_with_limit(const struct _u_request * request, struc
   }
   if (res == U_OK && response != NULL) {
     if (body_data.data != NULL && body_data.size) {
-      response->binary_body = o_malloc(body_data.size);
+      response->binary_body = ulfius_malloc(body_data.size);
       if (response->binary_body == NULL) {
         ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->binary_body");
-        o_free(body_data.data);
+        u_free(body_data.data);
         return U_ERROR_MEMORY;
       }
       memcpy(response->binary_body, body_data.data, body_data.size);
       response->binary_body_length = body_data.size;
     }
-    o_free(body_data.data);
+    u_free(body_data.data);
     return U_OK;
   } else {
-    o_free(body_data.data);
+    u_free(body_data.data);
     return res;
   }
 }
@@ -416,8 +418,8 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           }
 #endif
 
-          url = str_replace(copy_request->http_url, " ", "%20");
-          has_params = (o_strchr(url, '?') != NULL);
+          url = u_replace(copy_request->http_url, " ", "%20");
+          has_params = (u_strchr(url, '?') != NULL);
           if (u_map_count(copy_request->map_url) > 0) {
             // Append url parameters
             keys = u_map_enum_keys(copy_request->map_url);
@@ -432,10 +434,10 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
                   value_esc = curl_easy_escape(curl_handle, value, 0);
                   if (value_esc != NULL) {
                     if (!has_params) {
-                      url = mstrcatf(url, "%c%s=%s", fp, key_esc, value_esc);
+                      url = u_appendf(url, "%c%s=%s", fp, key_esc, value_esc);
                       has_params = 1;
                     } else {
-                      url = mstrcatf(url, "%c%s=%s", np, key_esc, value_esc);
+                      url = u_appendf(url, "%c%s=%s", np, key_esc, value_esc);
                     }
                     curl_free(value_esc);
                   } else {
@@ -444,10 +446,10 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
                   }
                 } else {
                   if (!has_params) {
-                    url = mstrcatf(url, "%c%s", fp, key_esc);
+                    url = u_appendf(url, "%c%s", fp, key_esc);
                     has_params = 1;
                   } else {
-                    url = mstrcatf(url, "%c%s", np, key_esc);
+                    url = u_appendf(url, "%c%s", np, key_esc);
                   }
                 }
                 curl_free(key_esc);
@@ -463,7 +465,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           }
 
           if (u_map_count(copy_request->map_post_body) > 0) {
-            o_free(copy_request->binary_body);
+            u_free(copy_request->binary_body);
             copy_request->binary_body = NULL;
             copy_request->binary_body_length = 0;
             // Append MHD_HTTP_POST_ENCODING_FORM_URLENCODED post parameters
@@ -478,29 +480,29 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
                   value_esc = curl_easy_escape(curl_handle, value, 0);
                   if (value_esc != NULL) {
                     if (!i) {
-                      copy_request->binary_body = (unsigned char *)mstrcatf((char *)copy_request->binary_body, "%s=%s", key_esc, value_esc);
+                      copy_request->binary_body = (unsigned char *)u_appendf((char *)copy_request->binary_body, "%s=%s", key_esc, value_esc);
                     } else {
-                      copy_request->binary_body = (unsigned char *)mstrcatf((char *)copy_request->binary_body, "%c%s=%s", np, key_esc, value_esc);
+                      copy_request->binary_body = (unsigned char *)u_appendf((char *)copy_request->binary_body, "%c%s=%s", np, key_esc, value_esc);
                     }
-                    copy_request->binary_body_length = o_strlen((const char *)copy_request->binary_body);
+                    copy_request->binary_body_length = u_strlen((const char *)copy_request->binary_body);
                   } else {
                     ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_escape for body parameter value %s=%s", keys[i], value);
                     exit_loop = 1;
                   }
-                  o_free(value_esc);
+                  curl_free(value_esc);
                 } else {
                   if (!i) {
-                    copy_request->binary_body = (unsigned char *)mstrcatf((char *)copy_request->binary_body, "%s", key_esc);
+                    copy_request->binary_body = (unsigned char *)u_appendf((char *)copy_request->binary_body, "%s", key_esc);
                   } else {
-                    copy_request->binary_body = (unsigned char *)mstrcatf((char *)copy_request->binary_body, "%c%s", np, key_esc);
+                    copy_request->binary_body = (unsigned char *)u_appendf((char *)copy_request->binary_body, "%c%s", np, key_esc);
                   }
-                  copy_request->binary_body_length = o_strlen((const char *)copy_request->binary_body);
+                  copy_request->binary_body_length = u_strlen((const char *)copy_request->binary_body);
                 }
               } else {
                 ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_escape for body key %s", keys[i]);
                 exit_loop = 1;
               }
-              o_free(key_esc);
+              curl_free(key_esc);
             }
 
             if (exit_loop) {
@@ -546,19 +548,19 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
               // Build parameter
               value = u_map_get(copy_request->map_header, keys[i]);
               if (value != NULL) {
-                header = msprintf("%s:%s", keys[i], value);
+                header = u_printf("%s:%s", keys[i], value);
                 if ((header_list = curl_slist_append(header_list, header)) == NULL) {
                   ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_slist_append for header_list (1)");
                   exit_loop = 1;
                 }
-                o_free(header);
+                u_free(header);
               } else {
-                header = msprintf("%s:", keys[i]);
+                header = u_printf("%s:", keys[i]);
                 if ((header_list = curl_slist_append(header_list, header)) == NULL) {
                   ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_slist_append for header_list (2)");
                   exit_loop = 1;
                 }
-                o_free(header);
+                u_free(header);
               }
             }
             if (exit_loop) {
@@ -575,22 +577,22 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
               // Build parameter
               value = u_map_get(copy_request->map_cookie, keys[i]);
               if (value != NULL) {
-                cookie = msprintf("%s=%s", keys[i], value);
+                cookie = u_printf("%s=%s", keys[i], value);
               } else {
-                cookie = msprintf("%s:", keys[i]);
+                cookie = u_printf("%s:", keys[i]);
               }
               if (cookies == NULL) {
-                cookies = o_strdup(cookie);
+                cookies = u_strdup(cookie);
               } else {
-                cookies = mstrcatf(cookies, ";%s", cookie);
+                cookies = u_appendf(cookies, ";%s", cookie);
               }
-              o_free(cookie);
+              u_free(cookie);
             }
             if (curl_easy_setopt(curl_handle, CURLOPT_COOKIE, cookies) != CURLE_OK) {
               ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting cookie %s", cookie);
               exit_loop = 1;
             }
-            o_free(cookies);
+            u_free(cookies);
             if (exit_loop) {
               ret = U_ERROR_LIBCURL;
               break;
@@ -733,7 +735,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
               int secure = 0, http_only = 0;
 
               while (nc != NULL) {
-                char * nc_dup = o_strdup(nc->data), * saveptr, * elt;
+                char * nc_dup = u_strdup(nc->data), * saveptr, * elt;
                 int counter = 0;
 
                 if (nc_dup != NULL) {
@@ -742,25 +744,25 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
                     // libcurl cookie format is domain\tsecure\tpath\thttp_only\texpires\tkey\tvalue
                     switch (counter) {
                       case 0:
-                        domain = o_strdup(elt);
+                        domain = u_strdup(elt);
                         break;
                       case 1:
-                        secure = (0==o_strcmp(elt, "TRUE"));
+                        secure = (0==u_strcmp(elt, "TRUE"));
                         break;
                       case 2:
-                        path = o_strdup(elt);
+                        path = u_strdup(elt);
                         break;
                       case 3:
-                        http_only = (0==o_strcmp(elt, "TRUE"));
+                        http_only = (0==u_strcmp(elt, "TRUE"));
                         break;
                       case 4:
-                        expires = o_strdup(elt);
+                        expires = u_strdup(elt);
                         break;
                       case 5:
-                        key = o_strdup(elt);
+                        key = u_strdup(elt);
                         break;
                       case 6:
-                        value = o_strdup(elt);
+                        value = u_strdup(elt);
                         break;
                     }
                     elt = strtok_r(NULL, "\t", &saveptr);
@@ -769,13 +771,13 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
                   if (ulfius_add_cookie_to_response(response, key, value, expires, 0, domain, path, secure, http_only) != U_OK) {
                     ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error adding cookie %s/%s to response", key, value);
                   }
-                  o_free(key);
-                  o_free(value);
-                  o_free(domain);
-                  o_free(path);
-                  o_free(expires);
+                  u_free(key);
+                  u_free(value);
+                  u_free(domain);
+                  u_free(path);
+                  u_free(expires);
                 }
-                o_free(nc_dup);
+                u_free(nc_dup);
                 nc = nc->next;
               }
             } else {
@@ -785,7 +787,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
             curl_slist_free_all(cookies_list);
           }
         } while (0);
-        o_free(url);
+        u_free(url);
       } else {
         ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_init");
         ret = U_ERROR_LIBCURL;
@@ -860,7 +862,7 @@ int ulfius_send_smtp_rich_email(const char * host,
         } else {
           cur_port = port;
         }
-        smtp_url = msprintf("smtp%s://%s:%d", use_tls?"s":"", host, cur_port);
+        smtp_url = u_printf("smtp%s://%s:%d", use_tls?"s":"", host, cur_port);
         if (smtp_url == NULL) {
           ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for smtp_url");
           ret = U_ERROR_MEMORY;
@@ -946,11 +948,11 @@ int ulfius_send_smtp_rich_email(const char * host,
         strftime(date_str, 128, "Date: %a, %d %b %Y %T %z", &now);
 #endif
         if (cc != NULL) {
-          cc_str = msprintf("Cc: %s\r\n", cc);
+          cc_str = u_printf("Cc: %s\r\n", cc);
         } else {
-          cc_str = o_strdup("");
+          cc_str = u_strdup("");
         }
-        upload_ctx.data = msprintf("%s\r\n" // date_str
+        upload_ctx.data = u_printf("%s\r\n" // date_str
                                    "To: %s\r\n"
                                    "From: %s\r\n"
                                    "%s"
@@ -968,7 +970,7 @@ int ulfius_send_smtp_rich_email(const char * host,
           ret = U_ERROR_MEMORY;
           break;
         }
-        upload_ctx.len = o_strlen(upload_ctx.data);
+        upload_ctx.len = u_strlen(upload_ctx.data);
         if (curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, smtp_payload_source) != CURLE_OK) {
           ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_READFUNCTION");
           ret = U_ERROR_LIBCURL;
@@ -994,9 +996,9 @@ int ulfius_send_smtp_rich_email(const char * host,
 
       curl_slist_free_all(recipients);
       curl_easy_cleanup(curl_handle);
-      o_free(smtp_url);
-      o_free(cc_str);
-      o_free(upload_ctx.data);
+      u_free(smtp_url);
+      u_free(cc_str);
+      u_free(upload_ctx.data);
     } else {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error executing curl_easy_init");
       ret = U_ERROR_LIBCURL;

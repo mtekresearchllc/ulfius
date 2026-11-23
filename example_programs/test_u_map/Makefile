@@ -17,7 +17,7 @@ ULFIUS_LOCATION=../../src
 ULFIUS_INCLUDE=../../include
 EXAMPLE_INCLUDE=../include
 CFLAGS+=-c -Wall -I$(ULFIUS_INCLUDE) -I$(EXAMPLE_INCLUDE) -D_REENTRANT $(ADDITIONALFLAGS) $(CPPFLAGS)
-LIBS=u_example.o -lc -lorcania -lulfius -L$(ULFIUS_LOCATION)
+LIBS=u_example.o -lc -lulfius -L$(ULFIUS_LOCATION)
 
 
 all: test_u_map
@@ -43,3 +43,12 @@ test: test_u_map
 
 u_example.o: ../u_example.c ../include/u_example.h
 	$(CC) $(CFLAGS) ../u_example.c -o $@
+
+ULFIUS_SUPPORT=$(if $(wildcard $(ULFIUS_LOCATION)/u_string.c),$(ULFIUS_LOCATION),../../utility_support)
+CFLAGS+=-I$(ULFIUS_SUPPORT)
+LIBS+=u_string.o u_token.o
+u_example.o: u_string.o u_token.o
+u_string.o: $(ULFIUS_SUPPORT)/u_string.c
+	$(CC) $(CFLAGS) -c $< -o $@
+u_token.o: $(ULFIUS_SUPPORT)/u_token.c
+	$(CC) $(CFLAGS) -c $< -o $@

@@ -25,6 +25,7 @@
  */
 
 #include <stdio.h>
+#include "u_string.h"
 #include <string.h>
 #include <u_private.h>
 #include <ulfius.h>
@@ -34,27 +35,27 @@ int u_map_init(struct _u_map * u_map) {
     u_map->nb_values = 0;
     u_map->values = NULL;
     u_map->lengths = NULL;
-    u_map->keys = o_malloc(sizeof(char *));
+    u_map->keys = ulfius_malloc(sizeof(char *));
     if (u_map->keys == NULL) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->keys");
       return U_ERROR_MEMORY;
     }
     u_map->keys[0] = NULL;
 
-    u_map->values = o_malloc(sizeof(char *));
+    u_map->values = ulfius_malloc(sizeof(char *));
     if (u_map->values == NULL) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->values");
-      o_free(u_map->keys);
+      u_free(u_map->keys);
       u_map->keys = NULL;
       return U_ERROR_MEMORY;
     }
     u_map->values[0] = NULL;
 
-    u_map->lengths = o_malloc(sizeof(size_t));
+    u_map->lengths = ulfius_malloc(sizeof(size_t));
     if (u_map->lengths == NULL) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->lengths");
-      o_free(u_map->keys);
-      o_free(u_map->values);
+      u_free(u_map->keys);
+      u_free(u_map->values);
       u_map->keys = NULL;
       u_map->values = NULL;
       return U_ERROR_MEMORY;
@@ -71,12 +72,12 @@ int u_map_clean(struct _u_map * u_map) {
   int i;
   if (u_map != NULL) {
     for (i=0; i<u_map->nb_values; i++) {
-      o_free(u_map->keys[i]);
-      o_free(u_map->values[i]);
+      u_free(u_map->keys[i]);
+      u_free(u_map->values[i]);
     }
-    o_free(u_map->keys);
-    o_free(u_map->values);
-    o_free(u_map->lengths);
+    u_free(u_map->keys);
+    u_free(u_map->values);
+    u_free(u_map->lengths);
     u_map->keys = NULL;
     u_map->values = NULL;
     u_map->lengths = NULL;
@@ -88,7 +89,7 @@ int u_map_clean(struct _u_map * u_map) {
 
 int u_map_clean_full(struct _u_map * u_map) {
   if (u_map_clean(u_map) == U_OK) {
-    o_free(u_map);
+    u_free(u_map);
     return U_OK;
   } else {
     return U_ERROR_PARAMS;
@@ -99,10 +100,10 @@ int u_map_clean_enum(char ** array) {
   int i;
   if (array != NULL) {
     for (i=0; array[i] != NULL; i++) {
-      o_free(array[i]);
+      u_free(array[i]);
       array[i] = NULL;
     }
-    o_free(array);
+    u_free(array);
     return U_OK;
   } else {
     return U_ERROR_PARAMS;
@@ -121,7 +122,7 @@ int u_map_has_key(const struct _u_map * u_map, const char * key) {
   int i;
   if (u_map != NULL && key != NULL) {
     for (i=0; u_map->keys[i] != NULL; i++) {
-      if (0 == o_strcmp(u_map->keys[i], key)) {
+      if (0 == u_strcmp(u_map->keys[i], key)) {
         return 1;
       }
     }
@@ -130,7 +131,7 @@ int u_map_has_key(const struct _u_map * u_map, const char * key) {
 }
 
 int u_map_has_value(const struct _u_map * u_map, const char * value) {
-  return u_map_has_value_binary(u_map, value, o_strlen(value));
+  return u_map_has_value_binary(u_map, value, u_strlen(value));
 }
 
 int u_map_has_value_binary(const struct _u_map * u_map, const char * value, size_t length) {
@@ -147,7 +148,7 @@ int u_map_has_value_binary(const struct _u_map * u_map, const char * value, size
 
 int u_map_put(struct _u_map * u_map, const char * key, const char * value) {
   if (value != NULL) {
-    return u_map_put_binary(u_map, key, value, 0, o_strlen(value)+1);
+    return u_map_put_binary(u_map, key, value, 0, u_strlen(value)+1);
   } else {
     return u_map_put_binary(u_map, key, NULL, 0, 0);
   }
@@ -156,12 +157,12 @@ int u_map_put(struct _u_map * u_map, const char * key, const char * value) {
 int u_map_put_binary(struct _u_map * u_map, const char * key, const char * value, uint64_t offset, size_t length) {
   size_t i;
   char * dup_key, * dup_value;
-  if (u_map != NULL && key != NULL && !o_strnullempty(key) && (offset+length+1) <= SIZE_MAX) {
+  if (u_map != NULL && key != NULL && !u_strnullempty(key) && (offset+length+1) <= SIZE_MAX) {
     for (i=0; i < (size_t)u_map->nb_values; i++) {
-      if (0 == o_strcmp(u_map->keys[i], key)) {
+      if (0 == u_strcmp(u_map->keys[i], key)) {
         // Key already exist, extend and/or replace value
         if (u_map->lengths[i] < (offset + length)) {
-          u_map->values[i] = o_realloc(u_map->values[i], (size_t)(offset + length + 1));
+          u_map->values[i] = ulfius_realloc(u_map->values[i], (size_t)(offset + length + 1));
           if (u_map->values[i] == NULL) {
             ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->values");
             return U_ERROR_MEMORY;
@@ -174,8 +175,8 @@ int u_map_put_binary(struct _u_map * u_map, const char * key, const char * value
             *(u_map->values[i]+offset+length) = '\0';
           }
         } else {
-          o_free(u_map->values[i]);
-          u_map->values[i] = o_strdup("");
+          u_free(u_map->values[i]);
+          u_map->values[i] = u_strdup("");
           u_map->lengths[i] = 0;
         }
         return U_OK;
@@ -183,53 +184,53 @@ int u_map_put_binary(struct _u_map * u_map, const char * key, const char * value
     }
     if (u_map->values[i] == NULL) {
       // Not found, add key/value
-      dup_key = o_strdup(key);
+      dup_key = u_strdup(key);
       if (dup_key == NULL) {
         ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for dup_key");
         return U_ERROR_MEMORY;
       }
       if (value != NULL) {
-        dup_value = o_malloc((size_t)(offset + length + 1));
+        dup_value = ulfius_malloc((size_t)(offset + length + 1));
         if (dup_value == NULL) {
           ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for dup_value");
-          o_free(dup_key);
+          u_free(dup_key);
           return U_ERROR_MEMORY;
         }
         memcpy((dup_value + offset), value, length);
         *(dup_value + offset + length) = '\0';
       } else {
-        dup_value = o_strdup("");
+        dup_value = u_strdup("");
       }
 
       // Append key
       for (i = 0; u_map->keys[i] != NULL; i++);
-      u_map->keys = o_realloc(u_map->keys, (i + 2)*sizeof(char *));
+      u_map->keys = ulfius_realloc(u_map->keys, (i + 2)*sizeof(char *));
       if (u_map->keys == NULL) {
         ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->keys");
-        o_free(dup_key);
-        o_free(dup_value);
+        u_free(dup_key);
+        u_free(dup_value);
         return U_ERROR_MEMORY;
       }
       u_map->keys[i] = (char *)dup_key;
       u_map->keys[i+1] = NULL;
 
       // Append value
-      u_map->values = o_realloc(u_map->values, (i + 2)*sizeof(char *));
+      u_map->values = ulfius_realloc(u_map->values, (i + 2)*sizeof(char *));
       if (u_map->values == NULL) {
         ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->values");
-        o_free(dup_key);
-        o_free(dup_value);
+        u_free(dup_key);
+        u_free(dup_value);
         return U_ERROR_MEMORY;
       }
       u_map->values[i] = dup_value;
       u_map->values[i+1] = NULL;
 
       // Append length
-      u_map->lengths = o_realloc(u_map->lengths, (i + 2)*sizeof(size_t));
+      u_map->lengths = ulfius_realloc(u_map->lengths, (i + 2)*sizeof(size_t));
       if (u_map->lengths == NULL) {
         ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->lengths");
-        o_free(dup_key);
-        o_free(dup_value);
+        u_free(dup_key);
+        u_free(dup_value);
         return U_ERROR_MEMORY;
       }
       u_map->lengths[i] = (size_t)(offset + length);
@@ -250,7 +251,7 @@ int u_map_remove_from_key(struct _u_map * u_map, const char * key) {
     return U_ERROR_PARAMS;
   } else {
     for (i = u_map->nb_values-1; i >= 0; i--) {
-      if (0 == o_strcmp(u_map->keys[i], key)) {
+      if (0 == u_strcmp(u_map->keys[i], key)) {
         found = 1;
         res = u_map_remove_at(u_map, i);
         if (res != U_OK) {
@@ -273,7 +274,7 @@ int u_map_remove_from_key_case(struct _u_map * u_map, const char * key) {
     return U_ERROR_PARAMS;
   } else {
     for (i = u_map->nb_values-1; i >= 0; i--) {
-      if (0 == o_strcasecmp(u_map->keys[i], key)) {
+      if (0 == u_strcasecmp(u_map->keys[i], key)) {
         found = 1;
         res = u_map_remove_at(u_map, i);
         if (res != U_OK) {
@@ -290,7 +291,7 @@ int u_map_remove_from_key_case(struct _u_map * u_map, const char * key) {
 }
 
 int u_map_remove_from_value(struct _u_map * u_map, const char * value) {
-  return u_map_remove_from_value_binary(u_map, value, o_strlen(value));
+  return u_map_remove_from_value_binary(u_map, value, u_strlen(value));
 }
 
 int u_map_remove_from_value_binary(struct _u_map * u_map, const char * value, size_t length) {
@@ -323,7 +324,7 @@ int u_map_remove_from_value_case(struct _u_map * u_map, const char * value) {
     return U_ERROR_PARAMS;
   } else {
     for (i = u_map->nb_values-1; i >= 0; i--) {
-      if (0 == o_strcasecmp(u_map->values[i], value)) {
+      if (0 == u_strcasecmp(u_map->values[i], value)) {
         found = 1;
         res = u_map_remove_at(u_map, i);
         if (res != U_OK) {
@@ -346,24 +347,24 @@ int u_map_remove_at(struct _u_map * u_map, const int index) {
   } else if (index >= u_map->nb_values) {
     return U_ERROR_NOT_FOUND;
   } else {
-    o_free(u_map->keys[index]);
-    o_free(u_map->values[index]);
+    u_free(u_map->keys[index]);
+    u_free(u_map->values[index]);
     for (i = index; i < u_map->nb_values; i++) {
       u_map->keys[i] = u_map->keys[i + 1];
       u_map->values[i] = u_map->values[i + 1];
       u_map->lengths[i] = u_map->lengths[i + 1];
     }
-    u_map->keys = o_realloc(u_map->keys, (((size_t)u_map->nb_values)*sizeof(char *)));
+    u_map->keys = ulfius_realloc(u_map->keys, (((size_t)u_map->nb_values)*sizeof(char *)));
     if (u_map->keys == NULL) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->keys");
       return U_ERROR_MEMORY;
     }
-    u_map->values = o_realloc(u_map->values, (((size_t)u_map->nb_values)*sizeof(char *)));
+    u_map->values = ulfius_realloc(u_map->values, (((size_t)u_map->nb_values)*sizeof(char *)));
     if (u_map->values == NULL) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->values");
       return U_ERROR_MEMORY;
     }
-    u_map->lengths = o_realloc(u_map->lengths, (((size_t)u_map->nb_values)*sizeof(char *)));
+    u_map->lengths = ulfius_realloc(u_map->lengths, (((size_t)u_map->nb_values)*sizeof(char *)));
     if (u_map->lengths == NULL) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->lengths");
       return U_ERROR_MEMORY;
@@ -378,7 +379,7 @@ const char * u_map_get(const struct _u_map * u_map, const char * key) {
   int i;
   if (u_map != NULL && key != NULL) {
     for (i=0; u_map->keys[i] != NULL; i++) {
-      if (0 == o_strcmp(u_map->keys[i], key)) {
+      if (0 == u_strcmp(u_map->keys[i], key)) {
         if (u_map->lengths[i] > 0) {
           return u_map->values[i];
         } else {
@@ -396,7 +397,7 @@ int u_map_has_key_case(const struct _u_map * u_map, const char * key) {
   int i;
   if (u_map != NULL && key != NULL) {
     for (i=0; u_map->keys[i] != NULL; i++) {
-      if (0 == o_strcasecmp(u_map->keys[i], key)) {
+      if (0 == u_strcasecmp(u_map->keys[i], key)) {
         return 1;
       }
     }
@@ -408,7 +409,7 @@ int u_map_has_value_case(const struct _u_map * u_map, const char * value) {
   int i;
   if (u_map != NULL && value != NULL) {
     for (i=0; u_map->values[i] != NULL; i++) {
-      if (0 == o_strcasecmp(u_map->values[i], value)) {
+      if (0 == u_strcasecmp(u_map->values[i], value)) {
         return 1;
       }
     }
@@ -420,7 +421,7 @@ const char * u_map_get_case(const struct _u_map * u_map, const char * key) {
   int i;
   if (u_map != NULL && key != NULL) {
     for (i=0; u_map->keys[i] != NULL; i++) {
-      if (0 == o_strcasecmp(u_map->keys[i], key)) {
+      if (0 == u_strcasecmp(u_map->keys[i], key)) {
         return u_map->values[i];
       }
     }
@@ -434,7 +435,7 @@ ssize_t u_map_get_length(const struct _u_map * u_map, const char * key) {
   int i;
   if (u_map != NULL && key != NULL) {
     for (i=0; u_map->keys[i] != NULL; i++) {
-      if (0 == o_strcmp(u_map->keys[i], key)) {
+      if (0 == u_strcmp(u_map->keys[i], key)) {
         return (ssize_t)u_map->lengths[i];
       }
     }
@@ -448,7 +449,7 @@ ssize_t u_map_get_case_length(const struct _u_map * u_map, const char * key) {
   int i;
   if (u_map != NULL && key != NULL) {
     for (i=0; u_map->keys[i] != NULL; i++) {
-      if (0 == o_strcasecmp(u_map->keys[i], key)) {
+      if (0 == u_strcasecmp(u_map->keys[i], key)) {
         return (ssize_t)u_map->lengths[i];
       }
     }
@@ -463,13 +464,13 @@ struct _u_map * u_map_copy(const struct _u_map * source) {
   const char ** keys, * value;
   int i;
   if (source != NULL) {
-    copy = o_malloc(sizeof(struct _u_map));
+    copy = ulfius_malloc(sizeof(struct _u_map));
     if (copy == NULL) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map_copy.copy");
       return NULL;
     }
     if (u_map_init(copy) != U_OK) {
-      o_free(copy);
+      u_free(copy);
       ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error u_map_init for u_map_copy.copy");
       return NULL;
     }
@@ -517,7 +518,7 @@ int u_map_count_keys_case(const struct _u_map * u_map, const char * key) {
   int i, count = 0;
   if (u_map != NULL && key != NULL) {
     for (i=0; u_map->keys[i] != NULL; i++) {
-      if (0 == o_strcasecmp(u_map->keys[i], key)) {
+      if (0 == u_strcasecmp(u_map->keys[i], key)) {
         count++;
       }
     }
