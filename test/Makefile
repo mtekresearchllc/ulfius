@@ -16,7 +16,7 @@ LDFLAGS=-lc -L$(ULFIUS_LOCATION) -lulfius $(shell pkg-config --libs liborcania) 
 # Use this LDFLAGS below if you use yder logs
 #LDFLAGS=-lc -lorcania -lyder -lulfius -lgnutls -lcheck -lpthread -lm -lrt -lsubunit -L$(ULFIUS_LOCATION)
 VALGRIND_COMMAND=valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all
-TARGET=u_map core framework websocket example_callbacks
+TARGET=u_map core framework websocket websocket_write_retry example_callbacks
 VERBOSE=0
 MEMCHECK=0
 CERT=cert
@@ -35,6 +35,9 @@ $(ULFIUS_LIBRARY): $(ULFIUS_SCRUTINIZE)
 %: %.c
 	$(CC) $(CFLAGS) $^ -o $@ $(LDFLAGS)
 
+websocket_write_retry: websocket_write_retry.c $(ULFIUS_LOCATION)/u_websocket.c
+	$(CC) $(CFLAGS) $< -o $@ $(LDFLAGS) -lmicrohttpd
+
 http_compression_callback.o: $(ULFIUS_EXAMPLE_CALLBACK_COMPRESS)/http_compression_callback.c $(ULFIUS_EXAMPLE_CALLBACK_COMPRESS)/http_compression_callback.h
 	$(CC) -c $(CFLAGS) -Wconversion $(ULFIUS_EXAMPLE_CALLBACK_COMPRESS)/http_compression_callback.c
 
@@ -44,7 +47,7 @@ static_compressed_inmemory_website_callback.o: $(ULFIUS_EXAMPLE_CALLBACK_FILE)/s
 example_callbacks: example_callbacks.c http_compression_callback.o static_compressed_inmemory_website_callback.o
 	$(CC) -I$(ULFIUS_EXAMPLE_CALLBACK_COMPRESS) -I$(ULFIUS_EXAMPLE_CALLBACK_FILE) example_callbacks.c http_compression_callback.o static_compressed_inmemory_website_callback.o -o example_callbacks $(LDFLAGS) $(CFLAGS)
 
-test: $(ULFIUS_LIBRARY) $(CERT)/server.key $(TARGET) test_u_map test_core test_framework test_websocket test_example_callbacks
+test: $(ULFIUS_LIBRARY) $(CERT)/server.key $(TARGET) test_u_map test_core test_framework test_websocket test_websocket_write_retry test_example_callbacks
 
 test_%: % $(ULFIUS_LIBRARY) $(CERT)/server.key
 	@if [ "$(VERBOSE)" = "0" ] && [ "$(MEMCHECK)" = "0" ]; then \

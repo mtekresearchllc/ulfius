@@ -47,6 +47,10 @@
 #include <unistd.h>
 #include <zlib.h>
 #include <limits.h>
+#include <time.h>
+
+// maximum time without sending any frame bytes
+#define U_WEBSOCKET_WRITE_IDLE_SECONDS 10
 
 #include "yuarel.h"
 
@@ -144,8 +148,10 @@ static int ulfius_websocket_send_frame(struct _websocket_manager * websocket_man
 {
         size_t offset = 0;
         ssize_t written;
-        int ready;
+        int ready, attempted = 0;
         struct pollfd output = {0};
+        struct timespec last_progress, now;
+        const char *reason = "connection closed or write failed";
 
         if (data == NULL || len == 0) {
                 return U_ERROR_PARAMS;
@@ -153,7 +159,28 @@ static int ulfius_websocket_send_frame(struct _websocket_manager * websocket_man
         output.fd = websocket_manager->type == U_WEBSOCKET_SERVER
                             ? websocket_manager->mhd_sock : websocket_manager->tcp_sock;
         output.events = POLLOUT;
+        if (clock_gettime(CLOCK_MONOTONIC, &last_progress) != 0) {
+                websocket_manager->connected = 0;
+                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Cannot start websocket write timer");
+                return U_ERROR;
+        }
         while (websocket_manager->connected && offset < len) {
+                // allow the initial attempt to send a graceful close frame
+                if (attempted && websocket_manager->close_flag) {
+                        reason = "shutdown requested";
+                        break;
+                }
+                if (clock_gettime(CLOCK_MONOTONIC, &now) != 0) {
+                        reason = "write timer failed";
+                        break;
+                }
+                if (now.tv_sec - last_progress.tv_sec > U_WEBSOCKET_WRITE_IDLE_SECONDS ||
+                    (now.tv_sec - last_progress.tv_sec == U_WEBSOCKET_WRITE_IDLE_SECONDS &&
+                     now.tv_nsec >= last_progress.tv_nsec)) {
+                        reason = "no write progress for 10 seconds";
+                        break;
+                }
+                attempted = 1;
                 ready = poll(&output, 1, U_WEBSOCKET_USEC_WAIT);
                 if (ready < 0 && errno == EINTR) {
                         continue;
@@ -163,9 +190,6 @@ static int ulfius_websocket_send_frame(struct _websocket_manager * websocket_man
                 }
                 if (!ready) {
                         // a polling interval is not a frame delivery deadline
-                        if (websocket_manager->close_flag) {
-                                break;
-                        }
                         continue;
                 }
                 if (!(output.revents & output.events)) {
@@ -190,6 +214,10 @@ static int ulfius_websocket_send_frame(struct _websocket_manager * websocket_man
                         break;
                 }
                 offset += (size_t)written;
+                if (clock_gettime(CLOCK_MONOTONIC, &last_progress) != 0) {
+                        reason = "write timer failed";
+                        break;
+                }
                 output.events = POLLOUT;
         }
         if (offset == len) {
@@ -197,8 +225,8 @@ static int ulfius_websocket_send_frame(struct _websocket_manager * websocket_man
         }
         // an incomplete frame cannot be followed by another frame or a close frame
         websocket_manager->connected = 0;
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Incomplete websocket frame (%zu/%zu bytes)",
-                      offset, len);
+        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Incomplete websocket frame (%zu/%zu bytes): %s",
+                      offset, len, reason);
         return U_ERROR;
 }
 
