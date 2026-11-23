@@ -1,0 +1,7 @@
+{
+  "version": "2.7.17",
+  "source_repository": "https://github.com/mtekresearchllc/ulfius",
+  "source_commit": "98907b230d8d22a37815ecbdb78fe4e1ff4d6fe4",
+  "generator": "Doxygen 1.9.8 (Ubuntu 24.04)",
+  "configuration": "doc/doxygen.cfg with PROJECT_NUMBER=2.7.17"
+}

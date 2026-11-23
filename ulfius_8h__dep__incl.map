@@ -1,0 +1,23 @@
+<map id="include/ulfius.h" name="include/ulfius.h">
+<area shape="rect" id="Node000001" title="Ulfius framework." alt="" coords="363,5,483,31"/>
+<area shape="rect" id="Node000002" href="$u__private_8h.html" title=" " alt="" coords="350,79,497,104"/>
+<area shape="poly" id="edge1_Node000001_Node000002" title=" " alt="" coords="426,44,426,79,421,79,421,44"/>
+<area shape="rect" id="Node000003" href="$u__map_8c.html" title=" " alt="" coords="5,152,105,177"/>
+<area shape="poly" id="edge8_Node000001_Node000003" title=" " alt="" coords="382,38,85,154,83,149,380,33"/>
+<area shape="rect" id="Node000004" href="$u__request_8c.html" title=" " alt="" coords="130,152,250,177"/>
+<area shape="poly" id="edge9_Node000001_Node000004" title=" " alt="" coords="394,40,327,81,210,154,207,150,325,76,391,36"/>
+<area shape="rect" id="Node000005" href="$u__response_8c.html" title=" " alt="" coords="274,152,405,177"/>
+<area shape="poly" id="edge10_Node000001_Node000005" title=" " alt="" coords="384,39,359,57,340,80,334,98,333,117,338,151,333,152,328,118,329,97,336,77,356,53,381,35"/>
+<area shape="rect" id="Node000006" href="$u__send__request_8c.html" title=" " alt="" coords="429,152,588,177"/>
+<area shape="poly" id="edge11_Node000001_Node000006" title=" " alt="" coords="466,35,491,53,511,77,518,97,519,118,515,152,509,151,514,117,512,98,506,80,488,57,463,39"/>
+<area shape="rect" id="Node000007" href="$u__websocket_8c.html" title=" " alt="" coords="612,152,752,177"/>
+<area shape="poly" id="edge12_Node000001_Node000007" title=" " alt="" coords="457,35,533,76,663,149,660,154,530,81,455,40"/>
+<area shape="rect" id="Node000008" href="$ulfius_8c.html" title=" " alt="" coords="777,152,867,177"/>
+<area shape="poly" id="edge13_Node000001_Node000008" title=" " alt="" coords="469,33,791,149,789,154,467,38"/>
+<area shape="poly" id="edge2_Node000002_Node000003" title=" " alt="" coords="351,109,106,156,105,151,350,104"/>
+<area shape="poly" id="edge3_Node000002_Node000004" title=" " alt="" coords="374,110,229,154,227,149,372,105"/>
+<area shape="poly" id="edge4_Node000002_Node000005" title=" " alt="" coords="401,115,355,154,351,150,398,111"/>
+<area shape="poly" id="edge5_Node000002_Node000006" title=" " alt="" coords="449,110,496,150,493,154,446,115"/>
+<area shape="poly" id="edge6_Node000002_Node000007" title=" " alt="" coords="479,105,641,149,639,154,477,110"/>
+<area shape="poly" id="edge7_Node000002_Node000008" title=" " alt="" coords="505,104,765,149,777,152,776,157,764,155,504,109"/>
+</map>
