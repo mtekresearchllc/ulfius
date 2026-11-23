@@ -1330,7 +1330,7 @@ $(function() {
 <div class="line"> </div>
 <div class="line">json_t * <a class="code hl_function" href="group__request__response__cookie.html#ga32f5e9ef8bdaa7da3b2614c9018b575c">ulfius_get_json_body_response</a>(<span class="keyword">struct</span> <a class="code hl_struct" href="struct__u__response.html">_u_response</a> * response, json_error_t * json_error);</div>
 </div><!-- fragment --><p>If you want to disable these functions, append <code>JANSSONFLAG=1</code> when you build Ulfius library.</p>
-<div class="fragment"><div class="line">$ git clone https://github.com/babelouest/ulfius.git</div>
+<div class="fragment"><div class="line">$ git clone https://github.com/mtekresearchllc/ulfius.git</div>
 <div class="line">$ cd ulfius/</div>
 <div class="line">$ git submodule update --init</div>
 <div class="line">$ make JANSSONFLAG=1</div>
@@ -1369,19 +1369,19 @@ $(function() {
 <div class="line">                                <span class="keyword">const</span> <span class="keywordtype">char</span> * subject, </div>
 <div class="line">                                <span class="keyword">const</span> <span class="keywordtype">char</span> * mail_body);</div>
 </div><!-- fragment --><p>If you want to disable these functions, append <code>CURLFLAG=1</code> when you build Ulfius library.</p>
-<div class="fragment"><div class="line">$ git clone https://github.com/babelouest/ulfius.git</div>
+<div class="fragment"><div class="line">$ git clone https://github.com/mtekresearchllc/ulfius.git</div>
 <div class="line">$ cd ulfius/</div>
 <div class="line">$ git submodule update --init</div>
 <div class="line">$ make CURLFLAG=1</div>
 <div class="line">$ sudo make install</div>
 </div><!-- fragment --><p>If you wan to disable libjansson and libcurl, you can append both parameters.</p>
-<div class="fragment"><div class="line">$ git clone https://github.com/babelouest/ulfius.git</div>
+<div class="fragment"><div class="line">$ git clone https://github.com/mtekresearchllc/ulfius.git</div>
 <div class="line">$ cd ulfius/</div>
 <div class="line">$ git submodule update --init</div>
 <div class="line">$ make CURLFLAG=1 JANSSONFLAG=1</div>
 <div class="line">$ sudo make install</div>
 </div><!-- fragment --><h2>Ready-to-use callback functions <a class="anchor" id="ready-to-use-callback-functions"></a></h2>
-<p>You can find some ready-to-use callback functions in the folder <a href="https://github.com/babelouest/ulfius/blob/master/example_callbacks">example_callbacks</a>.</p>
+<p>You can find some ready-to-use callback functions in the folder <a href="https://github.com/mtekresearchllc/ulfius/blob/master/example_callbacks">example_callbacks</a>.</p>
 <h1>Update existing programs to 2.7.16 <a class="anchor" id="update-existing-programs-to-276"></a></h1>
 <p>The <code>binary_body</code> type in <code>struct <a class="el" href="struct__u__request.html" title="definition of the parameters available in a struct _u_request">_u_request</a></code> and <code>struct <a class="el" href="struct__u__response.html" title="definition of the parameters available in a struct _u_response">_u_response</a></code> were changed from <code>void *</code> to <code>unsigned char *</code>. This change doesn't affect the set request body or set response body functions.</p>
 <h1>Update existing programs from Ulfius 2.0 to 2.1 <a class="anchor" id="update-existing-programs-from-ulfius-20-to-21"></a></h1>

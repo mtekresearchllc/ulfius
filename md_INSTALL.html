@@ -75,7 +75,7 @@ $(function() {
 <div class="fragment"><div class="line"># apt install -y libmicrohttpd-dev libjansson-dev libcurl4-gnutls-dev libgnutls28-dev libgcrypt20-dev zlib1g-dev</div>
 </div><!-- fragment --><h2>Good ol' Makefile</h2>
 <p>Download Orcania, Yder and Ulfius source code from GitHub, compile and install Orcania, then Yder, then compile and install Ulfius:</p>
-<p>Last Orcania release: <a href="https://github.com/babelouest/orcania/releases/latest/">https://github.com/babelouest/orcania/releases/latest/</a> Last Yder release: [<a href="https://github.com/babelouest/yder/releases/latest/">https://github.com/babelouest/yder/releases/latest/</a>](t/](<a href="https://github.com/babelouest/orcania/releases/latest/">https://github.com/babelouest/orcania/releases/latest/</a>) Last Ulfius release: <a href="https://github.com/babelouest/ulfius/releases/latest/">https://github.com/babelouest/ulfius/releases/latest/</a></p>
+<p>Last Orcania release: <a href="https://github.com/babelouest/orcania/releases/latest/">https://github.com/babelouest/orcania/releases/latest/</a> Last Yder release: [<a href="https://github.com/babelouest/yder/releases/latest/">https://github.com/babelouest/yder/releases/latest/</a>](t/](<a href="https://github.com/babelouest/orcania/releases/latest/">https://github.com/babelouest/orcania/releases/latest/</a>) Last Ulfius release: <a href="https://github.com/mtekresearchllc/ulfius/releases/latest/">https://github.com/mtekresearchllc/ulfius/releases/latest/</a></p>
 <p><b>Note: Make sure all the previous installed version of those libraries, via a package manager for example, are removed.</b></p>
 <div class="fragment"><div class="line">$ cd &lt;orcania_source&gt;</div>
 <div class="line">$ make &amp;&amp; sudo make install</div>
@@ -139,7 +139,7 @@ $(function() {
 <li><code>-DBUILD_ULFIUS_DOCUMENTATION=[on|off]</code> (default <code>off</code>): Build the documentation when running <code>make doc</code>, doxygen is required</li>
 <li><code>-DINSTALL_HEADER=[on|off]</code> (default <code>on</code>): Install header file <code><a class="el" href="ulfius_8h.html" title="Ulfius framework.">ulfius.h</a></code></li>
 <li><code>-DBUILD_TGZ=[on|off]</code> (default <code>off</code>): Build tar.gz package when running <code>make package</code></li>
-<li><code>-DBUILD_DEB=[on|off]</code> (default <code>off</code>): Build DEB package when running <code>make package</code></li>
+<li><code>-DBUILD_DEB=[on|off]</code> (default <code>off</code>): Build a local CPack DEB package when running <code>make package</code>. Requires <code>-DCPACK_DEBIAN_PACKAGE_MAINTAINER="Name &lt;email&gt;"</code> with the package builder's real contact. These convenience packages are distinct from Debian's distribution-maintained packages.</li>
 <li><code>-DBUILD_RPM=[on|off]</code> (default <code>off</code>): Build RPM package when running <code>make package</code></li>
 <li><code>-DCMAKE_BUILD_TYPE=[Debug|Release]</code> (default <code>Release</code>): Compile with debugging symbols or not </li>
 </ul>
