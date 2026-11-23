@@ -30,9 +30,9 @@ set(ULFIUS_LIBS )
 set(PROJECT_DESCRIPTION "Web Framework to build REST APIs, Webservices or any HTTP endpoint in C language. Can stream large amount of data, integrate JSON data with Jansson, and create websocket services")
 set(PROJECT_HOMEPAGE_URL "https://github.com/mtekresearchllc/ulfius/")
 set(PROJECT_BUGREPORT_PATH "https://github.com/mtekresearchllc/ulfius/issues")
-set(LIBRARY_VERSION_MAJOR "2")
-set(LIBRARY_VERSION_MINOR "7")
-set(LIBRARY_VERSION_PATCH "17")
+set(LIBRARY_VERSION_MAJOR "3")
+set(LIBRARY_VERSION_MINOR "0")
+set(LIBRARY_VERSION_PATCH "0")
 
 set(PROJECT_VERSION "${LIBRARY_VERSION_MAJOR}.${LIBRARY_VERSION_MINOR}.${LIBRARY_VERSION_PATCH}")
 set(PROJECT_VERSION_MAJOR ${LIBRARY_VERSION_MAJOR})
@@ -451,7 +451,7 @@ if (INSTALL_HEADER)
     configure_package_config_file(cmake-modules/UlfiusConfig.cmake.in UlfiusConfig.cmake
         INSTALL_DESTINATION "${ULFIUS_INSTALL_CMAKEDIR}")
     write_basic_package_version_file(UlfiusConfigVersion.cmake
-        COMPATIBILITY AnyNewerVersion)
+        COMPATIBILITY SameMajorVersion)
 
     install(FILES
                 cmake-modules/FindGnuTLS.cmake

@@ -2595,7 +2595,7 @@ libraries must not replace their application's hook.
 
 ### Migration from Yder
 
-This is an unreleased major-version API transition, not a drop-in 2.7 patch.
+This is the unreleased 3.0.0 API transition with SONAME 3.0, not a drop-in 2.7 patch.
 `ulfius.h` no longer includes `yder.h`; Ulfius neither links Yder nor exports
 replacement `y_*` functions. Existing applications that use Yder for their own
 logging must include/link it explicitly, or migrate their sink to the callback

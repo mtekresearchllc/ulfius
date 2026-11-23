@@ -1,6 +1,6 @@
 # Ulfius HTTP Framework
 
-The development branch contains an unreleased major-version logging API change.
+The development branch contains the unreleased 3.0.0 logging API change.
 Applications must migrate Yder log registration to Ulfius callbacks; see
 [Application logging](API.md#application-logging). Use the published 2.7 release
 for existing deployments until the major release is finalized.

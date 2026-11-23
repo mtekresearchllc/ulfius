@@ -40,9 +40,9 @@ ifeq ($(shell uname -s),Darwin)
 endif
 OBJECTS=ulfius.o u_map.o u_request.o u_response.o u_send_request.o u_websocket.o yuarel.o u_logging.o
 OUTPUT=libulfius.so
-VERSION_MAJOR=2
-VERSION_MINOR=7
-VERSION_PATCH=17
+VERSION_MAJOR=3
+VERSION_MINOR=0
+VERSION_PATCH=0
 
 ifndef JANSSONFLAG
 DISABLE_JANSSON=0
@@ -181,8 +181,9 @@ target: $(OBJECTS)
 	$(CC) $(CFLAGS) $<
 
 libulfius.so: $(OBJECTS) $(PKGCONFIG_FILE)
-	$(CC) -shared -fPIC -Wl,$(SONAME),$(OUTPUT) -o $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(OBJECTS) $(LIBS) $(LIBSDEP)  $(LJANSSON) $(LCURL) $(LGNUTLS)
-	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(OUTPUT)
+	$(CC) -shared -fPIC -Wl,$(SONAME),$(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR) -o $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(OBJECTS) $(LIBS) $(LIBSDEP) $(LJANSSON) $(LCURL) $(LGNUTLS)
+	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR)
+	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR) $(OUTPUT)
 
 libulfius.a: $(OBJECTS) $(PKGCONFIG_FILE)
 	ar rcs libulfius.a $(OBJECTS)
@@ -222,7 +223,7 @@ release: libulfius.so
 
 static: ADDITIONALFLAGS=-O3
 
-static: LIB_STATIC=$(LIBSDEP)  $(LJANSSON) $(LCURL) $(LGNUTLS)
+static: LIB_STATIC=$(LIBSDEP) $(LJANSSON) $(LCURL) $(LGNUTLS)
 
 static: libulfius.a
 
