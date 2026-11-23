@@ -109,6 +109,20 @@ $ cd src
 $ make static && sudo make static-install # or make DESTDIR=/tmp static-install if you want to install in `/tmp/lib`
 ```
 
+#### Upgrading a legacy Make installation
+
+Before installing 3.0 over a Make-built 2.7 release, stop its consumers and run
+`make -C src DESTDIR=/your/prefix uninstall` from the **old 2.7 source tree**.
+Legacy Make builds used the unversioned SONAME `libulfius.so`; keeping their real
+`libulfius.so.2.7.x` file in the installation directory lets a later `ldconfig`
+restore the linker name to that old library. Merely replacing the symlink is not
+sufficient. Confirm the old Make-built file is removed before installing 3.0,
+then rebuild and migrate all consumers to the new logging API. Old binaries with
+`NEEDED libulfius.so` cannot safely share that installation with 3.0.
+
+CMake/distribution 2.7 libraries with SONAME `libulfius.so.2.7` do not have this
+collision and may coexist. Do not remove such libraries with a broad 2.x glob.
+
 #### Embedded and non-POSIX targets in 3.0 development
 
 The new logging implementation requires POSIX pthread mutexes, conditions,

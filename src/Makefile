@@ -192,10 +192,10 @@ clean:
 	rm -f *.o *.so *.a $(OUTPUT) $(OUTPUT).* $(CONFIG_FILE) $(PKGCONFIG_FILE)
 
 install: all $(PKGCONFIG_FILE)
+	mkdir -p $(DESTDIR)/lib/pkgconfig/ $(DESTDIR)/include
 	install $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(DESTDIR)/lib
 	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(DESTDIR)/lib/$(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR)
 	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR) $(DESTDIR)/lib/$(OUTPUT)
-	mkdir -p $(DESTDIR)/lib/pkgconfig/ $(DESTDIR)/include
 	install -m644 $(PKGCONFIG_FILE) $(DESTDIR)/lib/pkgconfig/
 	install -m644 $(ULFIUS_INCLUDE)/ulfius.h $(ULFIUS_INCLUDE)/u_logging.h $(DESTDIR)/include
 	install -m644 $(CONFIG_FILE) $(DESTDIR)/include
