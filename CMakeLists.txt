@@ -383,7 +383,7 @@ if (BUILD_ULFIUS_TESTING)
         
         set(TESTS core u_map framework example_callbacks)
         if (WITH_WEBSOCKET)
-            set(TESTS ${TESTS} websocket)
+            set(TESTS ${TESTS} websocket websocket_write_retry)
         endif ()
 
         configure_file(
