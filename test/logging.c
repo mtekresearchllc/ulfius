@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <ulfius.h>
 
 typedef struct {
@@ -84,6 +85,10 @@ static void basic_and_lifetime(void)
         assert(ulfius_set_log_callback(ULFIUS_LOG_DEBUG, capture, &probe) == U_OK);
         ulfius_log_message(ULFIUS_LOG_INFO, "%06000d", 7);
         assert(strlen(probe.text) == 6000 && probe.text[5999] == '7');
+        ulfius_log_message(ULFIUS_LOG_INFO, "%0512d", 7);
+        assert(strlen(probe.text) == 512 && probe.text[511] == '7');
+        assert(ulfius_start_framework(NULL) != U_OK);
+        assert(probe.level == ULFIUS_LOG_ERROR && strlen(probe.text) > 0);
         probe.wait = 1;
         probe.entered = 0;
         assert(pthread_create(&thread, NULL, emit_long, NULL) == 0);
@@ -101,6 +106,68 @@ static void basic_and_lifetime(void)
         assert(pthread_create(&thread, NULL, emit_long, NULL) == 0);
         assert(pthread_join(thread, NULL) == 0);
         assert(ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL) == U_OK);
+        pthread_cond_destroy(&probe.ready);
+        pthread_mutex_destroy(&probe.lock);
+}
+
+typedef struct {
+        pthread_mutex_t lock;
+        pthread_cond_t ready;
+        int started;
+} setter_probe_t;
+
+static void *remove_hook(void *data)
+{
+        setter_probe_t *probe = data;
+
+        pthread_mutex_lock(&probe->lock);
+        probe->started = 1;
+        pthread_cond_broadcast(&probe->ready);
+        pthread_mutex_unlock(&probe->lock);
+        assert(ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL) == U_OK);
+        pthread_testcancel();
+        return NULL;
+}
+
+static void cancelled_setter(void)
+{
+        log_probe_t probe = { .lock = PTHREAD_MUTEX_INITIALIZER,
+                .ready = PTHREAD_COND_INITIALIZER, .wait = 1 };
+        setter_probe_t setter = { .lock = PTHREAD_MUTEX_INITIALIZER,
+                .ready = PTHREAD_COND_INITIALIZER };
+        pthread_t emitter;
+        pthread_t changing;
+        struct timespec settle = { 0, 100000000 };
+        void *result;
+
+        assert(ulfius_set_log_callback(ULFIUS_LOG_DEBUG, capture, &probe) == U_OK);
+        assert(pthread_create(&emitter, NULL, emit_long, NULL) == 0);
+        pthread_mutex_lock(&probe.lock);
+        while (!probe.entered) {
+                pthread_cond_wait(&probe.ready, &probe.lock);
+        }
+        pthread_mutex_unlock(&probe.lock);
+        assert(pthread_create(&changing, NULL, remove_hook, &setter) == 0);
+        pthread_mutex_lock(&setter.lock);
+        while (!setter.started) {
+                pthread_cond_wait(&setter.ready, &setter.lock);
+        }
+        pthread_mutex_unlock(&setter.lock);
+        // let the setter enter its blocked drain before requesting cancellation
+        nanosleep(&settle, NULL);
+        assert(pthread_cancel(changing) == 0);
+        pthread_mutex_lock(&probe.lock);
+        probe.wait = 0;
+        pthread_cond_broadcast(&probe.ready);
+        pthread_mutex_unlock(&probe.lock);
+        assert(pthread_join(emitter, NULL) == 0);
+        assert(pthread_join(changing, &result) == 0 && result == PTHREAD_CANCELED);
+        assert(ulfius_set_log_callback(ULFIUS_LOG_INFO, capture, &probe) == U_OK);
+        ulfius_log_message(ULFIUS_LOG_INFO, "after cancelled setter");
+        assert(strcmp(probe.text, "after cancelled setter") == 0);
+        assert(ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL) == U_OK);
+        pthread_cond_destroy(&setter.ready);
+        pthread_mutex_destroy(&setter.lock);
         pthread_cond_destroy(&probe.ready);
         pthread_mutex_destroy(&probe.lock);
 }
@@ -180,6 +247,7 @@ static void concurrent_replacement(void)
 int main(void)
 {
         basic_and_lifetime();
+        cancelled_setter();
         concurrent_replacement();
         puts("logging callbacks, cancellation and concurrent replacement passed");
         return 0;

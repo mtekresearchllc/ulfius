@@ -127,7 +127,7 @@ Those two options are exclusive, you can't use them both at the same time.
 
 #### Installation directory
 
-By default, the shared libraries and the header files will be installed in the `/usr/local` location. To change this setting, you can modify the `DESTDIR` value in the `src/Makefile`, `lib/orcania/src/Makefile` files.
+By default, the shared libraries and the header files will be installed in the `/usr/local` location. To change this setting, you can modify the `DESTDIR` value in `src/Makefile` and `lib/orcania/src/Makefile`.
 
 ```shell
 $ make DESTDIR=/tmp install # to install ulfius in /tmp/lib for example

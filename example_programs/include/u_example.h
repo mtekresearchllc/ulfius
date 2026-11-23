@@ -1,4 +1,5 @@
-/* Ulfius example logging sink
+/* Ulfius example programs
+ * Copyright 2018-2022 Nicolas Mora <mail@babelouest.org>
  * SPDX-License-Identifier: MIT */
 #ifndef U_EXAMPLE_H
 #define U_EXAMPLE_H

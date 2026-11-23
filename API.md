@@ -2586,9 +2586,11 @@ thread that is changing the hook. Other synchronization errors also retain the
 previous registration. Only successful unregistration permits freeing its context.
 
 Callbacks must not re-enter other Ulfius operations: some emitters already hold
-library locks. Same-thread recursive logging is suppressed. Deferred cancellation
-and `pthread_exit` from a callback release the in-flight reference and temporary
-message storage; asynchronous cancellation and `longjmp` are unsupported. These
+library locks. Same-thread recursive logging is suppressed. Callbacks reached from
+inside Ulfius must return normally. Only callbacks reached through direct application
+calls to `ulfius_log_message` may use deferred cancellation or `pthread_exit`: the
+logger releases its in-flight reference and temporary storage, but cannot unwind
+an interrupted library operation. Asynchronous cancellation and `longjmp` are unsupported. These
 APIs are not signal-safe. After a multithreaded `fork`, the child must `exec` before
 using logging. Registration is application-owned and process-wide; dependent
 libraries must not replace their application's hook.
@@ -2613,3 +2615,19 @@ the callback API is always available and disabled at runtime until registered.
 The `uwsc --output-log-file` option remains available through a tool-owned sink.
 Optional Iddawc/Rhonabwy examples may still inherit their own dependencies; those
 are not dependencies of Ulfius or uwsc.
+
+Applications retaining Yder can bridge explicitly after initializing their own
+Yder sink. Ulfius itself does not include or link Yder:
+
+```c
+#include <yder.h>
+static void yder_bridge(void *context, ulfius_log_level_t level, const char *message)
+{
+        const unsigned long levels[] = { Y_LOG_LEVEL_NONE, Y_LOG_LEVEL_NONE,
+                Y_LOG_LEVEL_ERROR, Y_LOG_LEVEL_WARNING, Y_LOG_LEVEL_INFO, Y_LOG_LEVEL_DEBUG };
+        (void)context;
+        y_log_message(levels[level], "%s", message);
+}
+/* register with ulfius_set_log_callback(ULFIUS_LOG_DEBUG, yder_bridge, NULL),
+ * then unregister successfully before closing the application's Yder sink */
+```

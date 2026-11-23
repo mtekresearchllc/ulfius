@@ -24,6 +24,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <ulfius.h>
@@ -53,7 +54,15 @@ static void uwsc_log_callback(void *user_data, ulfius_log_level_t level,
 {
         FILE *stream = user_data;
 
-        fprintf(stream, "[%d] %s\n", (int)level, message);
+        const char *names[] = { "INVALID", "NONE", "ERROR", "WARNING", "INFO", "DEBUG" };
+        struct tm local;
+        time_t now = time(NULL);
+        char timestamp[32] = "unknown-time";
+
+        if (localtime_r(&now, &local) != NULL) {
+                strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &local);
+        }
+        fprintf(stream, "%s [%s] %s\n", timestamp, names[level], message);
         fflush(stream);
 }
 
@@ -242,8 +251,9 @@ static int init_config(struct _config * config) {
 static void exit_program(struct _config ** config, int exit_value) {
   if (config != NULL) {
     if ((*config)->log_file != NULL) {
-      ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL);
-      fclose((*config)->log_file);
+      if (ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL) == U_OK) {
+        fclose((*config)->log_file);
+      }
     }
     o_free((*config)->log_path);
     o_free((*config)->binary_file_send);
@@ -431,6 +441,7 @@ int main (int argc, char ** argv) {
 #else
 
 #include <stdio.h>
+#include <time.h>
 
 int main() {
   fprintf(stderr, "Websocket not supported in your Ulfius library, you must rebuild ulfius and uwsc with Websocket support\n");

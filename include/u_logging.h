@@ -40,7 +40,9 @@ typedef void (*ulfius_log_callback_t)(void *user_data,
  *        replacement may be discarded. applications own this registration;
  *        dependent libraries must not replace it without application consent.
  *
- *        callbacks must return normally or use pthread_exit/deferred cancellation;
+ *        callbacks reached from inside Ulfius must return normally. thread exit or
+ *        deferred cancellation is tolerated only for direct application calls to
+ *        ulfius_log_message, where no library operation is interrupted;
  *        longjmp and asynchronous cancellation are unsupported. neither logging
  *        function is async-signal-safe. a child of a multithreaded fork must exec
  *        before using logging. on any error the previous registration is retained.

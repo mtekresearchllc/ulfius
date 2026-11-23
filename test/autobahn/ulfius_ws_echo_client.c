@@ -1,5 +1,5 @@
-#include "u_example.h"
 /* Public domain, no copyright. Use at your own risk. */
+#include "u_example.h"
 
 #include <ulfius.h>
 
@@ -77,6 +77,7 @@ int main(int argc, char ** argv) {
   o_free(url);
   ulfius_clean_request(&request);
 
-  ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL);
-  fclose(log_file);
+  if (ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL) == U_OK) {
+    fclose(log_file);
+  }
 }

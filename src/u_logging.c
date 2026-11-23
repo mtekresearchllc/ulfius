@@ -92,6 +92,7 @@ static void u_log_finish(void *data)
 
         free(call->allocated);
         pthread_setspecific(u_log_key, NULL);
+        // this statically initialized default mutex is never destroyed
         pthread_mutex_lock(&u_log_dispatch_lock);
         u_log_in_flight--;
         if (u_log_in_flight == 0) {

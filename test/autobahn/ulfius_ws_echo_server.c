@@ -1,5 +1,5 @@
-#include "u_example.h"
 /* Public domain, no copyright. Use at your own risk. */
+#include "u_example.h"
 
 #include <signal.h>
 #include <string.h>
@@ -171,6 +171,7 @@ int main(int argc, char ** argv) {
   ulfius_stop_framework(&instance_http);
   ulfius_clean_instance(&instance_http);
   ulfius_log_message(ULFIUS_LOG_INFO, "Stop http websocket echo server");
-  ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL);
-  fclose(log_file);
+  if (ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL) == U_OK) {
+    fclose(log_file);
+  }
 }

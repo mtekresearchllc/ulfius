@@ -16,10 +16,24 @@ static int fail_format;
 static int fail_key;
 static int fail_specific;
 static int calls;
+static int allocations;
 
 static void *fault_malloc(size_t size)
 {
-        return fail_allocation ? NULL : malloc(size);
+        void *memory = fail_allocation ? NULL : malloc(size);
+
+        if (memory != NULL) {
+                allocations++;
+        }
+        return memory;
+}
+
+static void fault_free(void *memory)
+{
+        if (memory != NULL) {
+                allocations--;
+        }
+        free(memory);
 }
 
 static int fault_vsnprintf(char *text, size_t size, const char *format, va_list arguments)
@@ -38,6 +52,7 @@ static int fault_setspecific(pthread_key_t key, const void *data)
 }
 
 #define malloc fault_malloc
+#define free fault_free
 #define vsnprintf fault_vsnprintf
 #define pthread_key_create fault_key_create
 #define pthread_setspecific fault_setspecific
@@ -50,6 +65,7 @@ static int fault_setspecific(pthread_key_t key, const void *data)
 #undef pthread_key_create
 #undef vsnprintf
 #undef malloc
+#undef free
 
 static void fault_capture(void *data, ulfius_log_level_t level, const char *message)
 {
@@ -57,6 +73,12 @@ static void fault_capture(void *data, ulfius_log_level_t level, const char *mess
         calls++;
         assert(level == ULFIUS_LOG_ERROR);
         assert(strcmp(message, "Ulfius: unable to format log message") == 0);
+}
+
+static void long_capture(void *data, ulfius_log_level_t level, const char *message)
+{
+        (void)data;
+        assert(level == ULFIUS_LOG_INFO && strlen(message) == 6000);
 }
 
 int main(void)
@@ -87,6 +109,12 @@ int main(void)
         fault_log_message(ULFIUS_LOG_WARNING, "anything");
         assert(calls == 2);
         assert(fault_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL) == U_OK);
+        fail_format = 0;
+        assert(fault_set_log_callback(ULFIUS_LOG_INFO, NULL, NULL) == U_ERROR_PARAMS);
+        assert(fault_set_log_callback(ULFIUS_LOG_INFO, long_capture, NULL) == U_OK);
+        fault_log_message(ULFIUS_LOG_INFO, "%06000d", 7);
+        assert(fault_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL) == U_OK);
+        assert(allocations == 0);
         puts("logging formatter and TLS failures passed");
         return 0;
 }

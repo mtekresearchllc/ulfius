@@ -1,5 +1,5 @@
-#include "u_example.h"
 /* Public domain, no copyright. Use at your own risk. */
+#include "u_example.h"
 
 #include <check.h>
 #include <ctype.h>
