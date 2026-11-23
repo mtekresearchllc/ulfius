@@ -17,6 +17,7 @@ void u_example_log_callback(void *user_data, ulfius_log_level_t level,
         if (localtime_r(&now, &local) != NULL) {
                 strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &local);
         }
-        fprintf(stream, "%s [%s] %s\n", timestamp, names[level], message);
+        fprintf(stream, "%s [%s] %s\n", timestamp,
+                names[level >= ULFIUS_LOG_ERROR && level <= ULFIUS_LOG_DEBUG ? level : 0], message);
         fflush(stream);
 }

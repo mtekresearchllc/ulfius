@@ -193,6 +193,8 @@ clean:
 
 install: all $(PKGCONFIG_FILE)
 	install $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(DESTDIR)/lib
+	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(DESTDIR)/lib/$(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR)
+	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR) $(DESTDIR)/lib/$(OUTPUT)
 	mkdir -p $(DESTDIR)/lib/pkgconfig/ $(DESTDIR)/include
 	install -m644 $(PKGCONFIG_FILE) $(DESTDIR)/lib/pkgconfig/
 	install -m644 $(ULFIUS_INCLUDE)/ulfius.h $(ULFIUS_INCLUDE)/u_logging.h $(DESTDIR)/include

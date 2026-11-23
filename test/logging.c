@@ -6,6 +6,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 #include <ulfius.h>
 
 typedef struct {
@@ -246,9 +247,11 @@ static void concurrent_replacement(void)
 
 int main(void)
 {
+        alarm(30);
         basic_and_lifetime();
         cancelled_setter();
         concurrent_replacement();
+        alarm(0);
         puts("logging callbacks, cancellation and concurrent replacement passed");
         return 0;
 }
