@@ -1,0 +1,45 @@
+name: Library CI
+
+on:
+  push:
+    branches: [master, "dev/**"]
+  pull_request:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake pkg-config check gnutls-bin \
+            libmicrohttpd-dev libgnutls28-dev libjansson-dev libcurl4-gnutls-dev \
+            zlib1g-dev liborcania-dev libyder-dev
+      - name: Build pinned companion libraries
+        run: |
+          set -euo pipefail
+          for item in orcania:f3d9fa89ac9ae78c3162ce249aefc1df4df889d4 yder:8b446e2cfba46567bf3a265f0373ab30e32f7b9d; do
+            name=${item%%:*}
+            revision=${item#*:}
+            git clone "https://github.com/babelouest/$name.git" "$RUNNER_TEMP/$name"
+            git -C "$RUNNER_TEMP/$name" checkout --detach "$revision"
+            cmake -S "$RUNNER_TEMP/$name" -B "$RUNNER_TEMP/$name-build" \
+              -DCMAKE_PREFIX_PATH=/usr/local -DCMAKE_INSTALL_PREFIX=/usr/local \
+              -DCMAKE_INSTALL_LIBDIR=lib -DWITH_JOURNALD=OFF
+            cmake --build "$RUNNER_TEMP/$name-build" --parallel "$(nproc)"
+            sudo cmake --install "$RUNNER_TEMP/$name-build"
+          done
+          sudo ldconfig
+      - name: Build and test
+        run: |
+          make -C src -j"$(nproc)"
+          LD_LIBRARY_PATH=/usr/local/lib make -C test VERBOSE=1 test
