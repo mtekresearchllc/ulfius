@@ -109,7 +109,20 @@ $ cd src
 $ make static && sudo make static-install # or make DESTDIR=/tmp static-install if you want to install in `/tmp/lib`
 ```
 
-#### Enable embedded systems flags
+#### Embedded and non-POSIX targets in 3.0 development
+
+The new logging implementation requires POSIX pthread mutexes, conditions,
+`pthread_once`, thread-specific keys, deferred cancellation and cleanup handlers.
+The tested 3.0 development builds use Linux pthreads. FreeRTOS compatibility layers
+and native Windows builds without those facilities are not currently supported
+by this implementation; a platform backend must be implemented and validated before
+claiming support for them. No additional threading package is bundled or required
+on the tested Linux targets. Retain a 2.7 release for those other targets meanwhile.
+
+The legacy embedded flags below remain for porting work; they do not establish
+3.0 compatibility or remove the logging thread requirements.
+
+#### Embedded networking flags
 
 To build Ulfius on [FreeRTOS](https://www.freertos.org/), append the option `FREERTOSFLAG=1` to the make command when you build Ulfius:
 

@@ -2611,6 +2611,9 @@ name in context and generate timestamps in the application if needed. Map old
 `Y_LOG_LEVEL_*` constants to `ULFIUS_LOG_*`; numeric values are not interchangeable.
 The obsolete `WITH_YDER`, `YDERFLAG` and `U_DISABLE_YDER` build switches are removed;
 the callback API is always available and disabled at runtime until registered.
+The 3.0 development implementation requires full POSIX pthread facilities;
+FreeRTOS and native Windows compatibility must be restored and validated before
+release support is claimed (see [platform requirements](INSTALL.md#embedded-and-non-posix-targets-in-30-development)).
 
 The `uwsc --output-log-file` option remains available through a tool-owned sink.
 Optional Iddawc/Rhonabwy examples may still inherit their own dependencies; those
