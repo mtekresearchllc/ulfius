@@ -2371,7 +2371,7 @@ json_t * ulfius_get_json_body_response(struct _u_response * response, json_error
 If you want to disable these functions, append `JANSSONFLAG=1` when you build Ulfius library.
 
 ```
-$ git clone https://github.com/babelouest/ulfius.git
+$ git clone https://github.com/mtekresearchllc/ulfius.git
 $ cd ulfius/
 $ git submodule update --init
 $ make JANSSONFLAG=1
@@ -2466,7 +2466,7 @@ int ulfius_send_smtp_rich_email(const char * host,
 If you want to disable these functions, append `CURLFLAG=1` when you build Ulfius library.
 
 ```
-$ git clone https://github.com/babelouest/ulfius.git
+$ git clone https://github.com/mtekresearchllc/ulfius.git
 $ cd ulfius/
 $ git submodule update --init
 $ make CURLFLAG=1
@@ -2476,7 +2476,7 @@ $ sudo make install
 If you wan to disable libjansson and libcurl, you can append both parameters.
 
 ```
-$ git clone https://github.com/babelouest/ulfius.git
+$ git clone https://github.com/mtekresearchllc/ulfius.git
 $ cd ulfius/
 $ git submodule update --init
 $ make CURLFLAG=1 JANSSONFLAG=1
@@ -2485,7 +2485,7 @@ $ sudo make install
 
 ### Ready-to-use callback functions <a name="ready-to-use-callback-functions"></a>
 
-You can find some ready-to-use callback functions in the folder [example_callbacks](https://github.com/babelouest/ulfius/blob/master/example_callbacks).
+You can find some ready-to-use callback functions in the folder [example_callbacks](https://github.com/mtekresearchllc/ulfius/blob/master/example_callbacks).
 
 ## Update existing programs to 2.7.16 <a name="update-existing-programs-to-276"></a>
 
