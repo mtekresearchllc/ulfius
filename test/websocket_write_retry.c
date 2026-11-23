@@ -80,7 +80,9 @@ static void check_retry(int error, uint32_t progress, uint32_t shutdown, int exp
                 assert(attempts == progress * sizeof(data));
                 assert(elapsed > U_WEBSOCKET_WRITE_IDLE_SECONDS);
         } else {
-                assert(attempts > 0 && attempts < U_WEBSOCKET_WRITE_IDLE_SECONDS);
+                assert(attempts > 0);
+                // elapsed is the next clock value, one second beyond the last read
+                assert(elapsed - 1 == U_WEBSOCKET_WRITE_IDLE_SECONDS);
         }
         close(sockets[0]);
         close(sockets[1]);
