@@ -601,7 +601,9 @@ static int ulfius_webservice_dispatcher (void * cls,
         // Initialize auth variables
         if (u_mhd_copy_basic_auth(connection, con_info->request) != U_OK) {
           mhd_ret = MHD_NO;
-          close_loop = 1;
+          ulfius_clean_response_full(response);
+          response = NULL;
+          goto cleanup_endpoints;
         }
 
         for (i=0; current_endpoint_list[i] != NULL && !close_loop; i++) {
@@ -699,7 +701,7 @@ static int ulfius_webservice_dispatcher (void * cls,
                 }
                 if (ret_extensions == U_OK &&
                     (ret_protocol = ulfius_check_first_match(u_map_get_case(con_info->request->map_header, "Sec-WebSocket-Protocol"), ((struct _websocket_handle *)response->websocket_handle)->websocket_protocol, ",", &protocol)) == U_OK) {
-                  char websocket_accept[32] = {0};
+                  char websocket_accept[U_WEBSOCKET_ACCEPT_CAPACITY] = {0};
                   if (ulfius_generate_handshake_answer(u_map_get_case(con_info->request->map_header, "Sec-WebSocket-Key"), websocket_accept)) {
                     websocket->request = ulfius_duplicate_request(con_info->request);
                     if (websocket->request != NULL) {
@@ -1031,6 +1033,7 @@ static int ulfius_webservice_dispatcher (void * cls,
       }
     }
 
+cleanup_endpoints:
     for (i=0; current_endpoint_list[i] != NULL; i++) {
       ulfius_clean_endpoint(current_endpoint_list[i]);
       u_free(current_endpoint_list[i]);

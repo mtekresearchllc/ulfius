@@ -43,3 +43,4 @@ doc/API.md
 /test/memory_mhd_callback
 /test/memory_mhd_copy
 /test/memory_http
+/test/memory_mhd_legacy_auth

@@ -1306,7 +1306,7 @@ void ulfius_start_websocket_cb (void * cls,
  * Check if the response corresponds to the transformation of the key with the magic string
  */
 int ulfius_check_handshake_response(const char * key, const char * response) {
-  char websocket_accept[32] = {0};
+  char websocket_accept[U_WEBSOCKET_ACCEPT_CAPACITY] = {0};
 
   if (key != NULL && response != NULL) {
     if (ulfius_generate_handshake_answer(key, websocket_accept) && 0 == u_strcmp(websocket_accept, response)) {
@@ -1322,7 +1322,7 @@ int ulfius_check_handshake_response(const char * key, const char * response) {
 /**
  * Generates a handhshake answer from the key given in parameter
  */
-int ulfius_generate_handshake_answer(const char * key, char * out_digest) {
+int ulfius_generate_handshake_answer(const char * key, char out_digest[U_WEBSOCKET_ACCEPT_CAPACITY]) {
   gnutls_datum_t key_data;
   unsigned char encoded_key[32] = {0};
   size_t encoded_key_size = 32, encoded_key_size_base64;
@@ -1332,7 +1332,7 @@ int ulfius_generate_handshake_answer(const char * key, char * out_digest) {
   key_data.size = (unsigned int)u_strlen((const char *)key_data.data);
 
   if (key_data.data != NULL && out_digest != NULL && (res = gnutls_fingerprint(GNUTLS_DIG_SHA1, &key_data, encoded_key, &encoded_key_size)) == GNUTLS_E_SUCCESS) {
-    if (u_base64_encode(encoded_key, encoded_key_size, (unsigned char *)out_digest, 32, &encoded_key_size_base64)) {
+    if (u_base64_encode(encoded_key, encoded_key_size, (unsigned char *)out_digest, U_WEBSOCKET_ACCEPT_CAPACITY, &encoded_key_size_base64)) {
       out_digest[encoded_key_size_base64] = '\0';
       to_return = 1;
     } else {

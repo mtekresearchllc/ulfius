@@ -91,6 +91,18 @@ Ulfius does not require Orcania or Yder.
 
 On your linker command, add Ulfius as a dependency library, e.g. `-lulfius` for gcc.
 
+### Compiling supplied callbacks
+
+The callbacks in `example_callbacks/` use private support sources. Copy and
+compile `src/u_string.c` and `src/u_token.c` with the callback, and include their
+headers from `include/`. A CMake installation places these four files in
+`share/doc/ulfius/utility_support`; a Make installation installs the library and
+public headers only, so obtain support files from the matching source release.
+These helpers are not exported by the library and are not a supported public API.
+They call the public Ulfius allocator, so do not compile a second `u_memory.c`
+into your application. Optional authentication callbacks retain their documented
+Rhonabwy or Iddawc dependencies.
+
 ## Return values <a name="return-values"></a>
 
 When specified, some functions return `U_OK` on success, and other values otherwise. `U_OK` is 0, other values are non-0 values. The defined return value list is the following:
@@ -245,8 +257,7 @@ The `struct _u_instance` is defined as:
  * websocket_handler:      handler for the websocket structure
  * file_upload_callback:   callback function to manage file upload by blocks
  * file_upload_cls:        any pointer to pass to the file_upload_callback function
- * mhd_response_copy_data: to choose between MHD_RESPMEM_MUST_COPY and MHD_RESPMEM_MUST_FREE, only if you use MHD < 0.9.61, 
- *                         otherwise this option is skipped because it's useless
+ * mhd_response_copy_data: retained for layout compatibility, ignored
  * check_utf8:             check that all parameters values in the request (url, header and post_body)
  *                         are valid utf8 strings, if a parameter value has non utf8 character, the value
  *                         will be ignored, default 1

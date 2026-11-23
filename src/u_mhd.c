@@ -13,7 +13,7 @@ int u_mhd_copy_basic_auth(struct MHD_Connection *connection, struct _u_request *
         char *password_copy = u_strdup(password);
         int failed = (user && !user_copy) || (password && !password_copy);
 
-#if MHD_VERSION >= 0x00095600
+#if MHD_VERSION >= 0x00095600 && !defined(U_TEST_MHD_AUTH_FREE)
         MHD_free(user);
         MHD_free(password);
 #else

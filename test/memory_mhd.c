@@ -13,6 +13,11 @@ typedef union {
 } block_t;
 static size_t owned;
 static size_t mhd_frees;
+#if defined(U_TEST_MHD_AUTH_FREE)
+#define EXPECT_MHD_FREES(n) 0
+#else
+#define EXPECT_MHD_FREES(n) (n)
+#endif
 static int fail_after = -1;
 static int fail_response;
 static void *response_buffer;
@@ -93,15 +98,15 @@ int main(void)
                 fail_after = failure;
                 REQUIRE(u_mhd_copy_basic_auth(NULL, &request) == U_ERROR_MEMORY);
                 REQUIRE(!request.auth_basic_user && !request.auth_basic_password);
-                REQUIRE(owned == 0 && mhd_frees == (size_t)(failure + 1) * 2);
+                REQUIRE(owned == 0 && mhd_frees == EXPECT_MHD_FREES((size_t)(failure + 1) * 2));
         }
         fail_after = -1;
         REQUIRE(u_mhd_copy_basic_auth(NULL, &request) == U_OK);
         REQUIRE(strcmp(request.auth_basic_user, "user") == 0);
         REQUIRE(strcmp(request.auth_basic_password, "secret") == 0);
-        REQUIRE(mhd_frees == 6 && owned == 2);
+        REQUIRE(mhd_frees == EXPECT_MHD_FREES(6) && owned == 2);
         REQUIRE(u_mhd_copy_basic_auth(NULL, &request) == U_OK);
-        REQUIRE(mhd_frees == 8 && owned == 2);
+        REQUIRE(mhd_frees == EXPECT_MHD_FREES(8) && owned == 2);
         u_free(request.auth_basic_user);
         u_free(request.auth_basic_password);
         for (failure = 0; failure < 2; failure++) {

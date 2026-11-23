@@ -14,10 +14,19 @@ typedef union {
 } block_t;
 static pthread_mutex_t count_lock = PTHREAD_MUTEX_INITIALIZER;
 static size_t owned;
+static pthread_t main_thread;
+static int fail_auth;
+static int auth_failures;
+static int unexpected_callbacks;
 
 static void *allocate(size_t size)
 {
-        block_t *block = malloc(sizeof(*block) + size);
+        block_t *block;
+        if (fail_auth && size == 242 && !pthread_equal(main_thread, pthread_self())) {
+                auth_failures++;
+                return NULL;
+        }
+        block = malloc(sizeof(*block) + size);
         REQUIRE(block != NULL);
         block->magic = UINT64_C(0x84795837);
         pthread_mutex_lock(&count_lock);
@@ -58,11 +67,55 @@ static int reply(const struct _u_request *request, struct _u_response *response,
         REQUIRE(!strcmp(request->auth_basic_user, "user"));
         REQUIRE(!strcmp(request->auth_basic_password, "secret"));
         REQUIRE(!strcmp(u_map_get(request->map_post_body, "key space"), "value & space"));
+        REQUIRE(!strcmp(u_map_get(request->map_url, "url key"), "url & value"));
         body = json_pack("{s:b}", "ok", 1);
         REQUIRE(body != NULL);
         REQUIRE(ulfius_set_json_body_response(response, 200, body) == U_OK);
         json_decref(body);
         return U_CALLBACK_COMPLETE;
+}
+
+static int unexpected_reply(const struct _u_request *request,
+                            struct _u_response *response, void *unused)
+{
+        (void)request;
+        (void)unused;
+        unexpected_callbacks++;
+        REQUIRE(ulfius_set_string_body_response(response, 200, "unexpected") == U_OK);
+        return U_CALLBACK_COMPLETE;
+}
+
+static void test_auth_failure(int with_default)
+{
+        struct _u_instance instance;
+        struct _u_request request;
+        struct _u_response response;
+        char username[242];
+
+        memset(username, 'a', sizeof(username) - 1);
+        username[sizeof(username) - 1] = 0;
+        REQUIRE(ulfius_init_instance(&instance, 8080, NULL, NULL) == U_OK);
+        REQUIRE(ulfius_add_endpoint_by_val(&instance, "GET", "/", NULL, 0,
+                                          unexpected_reply, NULL) == U_OK);
+        if (with_default) {
+                REQUIRE(ulfius_set_default_endpoint(&instance, unexpected_reply, NULL) == U_OK);
+        }
+        fail_auth = 1;
+        auth_failures = 0;
+        REQUIRE(ulfius_start_framework(&instance) == U_OK);
+        REQUIRE(ulfius_init_request(&request) == U_OK);
+        REQUIRE(ulfius_init_response(&response) == U_OK);
+        REQUIRE(ulfius_set_request_properties(&request, U_OPT_HTTP_VERB, "GET",
+                U_OPT_HTTP_URL, "http://127.0.0.1:8080/", U_OPT_AUTH_BASIC,
+                username, "secret", U_OPT_NONE) == U_OK);
+        REQUIRE(ulfius_send_http_request(&request, &response) != U_OK);
+        ulfius_clean_request(&request);
+        ulfius_clean_response(&response);
+        ulfius_stop_framework(&instance);
+        fail_auth = 0;
+        REQUIRE(auth_failures == 1 && unexpected_callbacks == 0);
+        ulfius_clean_instance(&instance);
+        REQUIRE(owned == 0);
 }
 
 int main(void)
@@ -73,6 +126,7 @@ int main(void)
         json_t *body;
         CURL *external;
 
+        main_thread = pthread_self();
         REQUIRE(curl_global_init(CURL_GLOBAL_DEFAULT) == CURLE_OK);
         REQUIRE(ulfius_set_alloc_funcs(allocate, resize, release) == U_OK);
         REQUIRE(ulfius_global_init() == U_OK);
@@ -85,7 +139,8 @@ int main(void)
         REQUIRE(ulfius_set_request_properties(&request, U_OPT_HTTP_VERB, "POST",
                 U_OPT_HTTP_URL, "http://127.0.0.1:8080/", U_OPT_AUTH_BASIC,
                 "user", "secret", U_OPT_POST_BODY_PARAMETER,
-                "key space", "value & space", U_OPT_NONE) == U_OK);
+                "key space", "value & space", U_OPT_URL_PARAMETER,
+                "url key", "url & value", U_OPT_NONE) == U_OK);
         REQUIRE(ulfius_send_http_request(&request, &response) == U_OK);
         REQUIRE(response.status == 200);
         body = ulfius_get_json_body_response(&response, NULL);
@@ -95,6 +150,8 @@ int main(void)
         ulfius_clean_response(&response);
         ulfius_stop_framework(&instance);
         ulfius_clean_instance(&instance);
+        test_auth_failure(0);
+        test_auth_failure(1);
         ulfius_global_close();
         REQUIRE(owned == 0);
         external = curl_easy_init();

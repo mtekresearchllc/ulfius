@@ -321,7 +321,7 @@ struct _u_instance {
                                                        size_t size,
                                                        void * cls);
   void                        * file_upload_cls; /* !< any pointer to pass to the file_upload_callback function */
-  int                           mhd_response_copy_data; /* !< to choose between MHD_RESPMEM_MUST_COPY and MHD_RESPMEM_MUST_FREE, only if you use MHD < 0.9.61, otherwise this option is skipped because it's useless */
+  int                           mhd_response_copy_data; /* !< retained for layout compatibility, ignored */
   int                           check_utf8; /* !< check that all parameters values in the request (url, header and post_body), are valid utf8 strings, if a parameter value has non utf8 character, the value, will be ignored, default 1 */
 #ifndef U_DISABLE_GNUTLS
   int                           use_client_cert_auth; /* !< Internal variable use to indicate if the instance uses client certificate authentication, Do not change this value, available only if websocket support is enabled */

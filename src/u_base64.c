@@ -29,7 +29,7 @@ int u_base64_encode(const uint8_t *source, size_t length, uint8_t *output,
         if (output_length) {
                 *output_length = 0;
         }
-        if ((!source && length) || !output || !output_length ||
+        if (!source || !output || !output_length ||
             !u_base64_length(length, &encoded) || capacity <= encoded) {
                 return 0;
         }
@@ -62,7 +62,7 @@ int u_base64_encode_alloc(const uint8_t *source, size_t length, u_encoded_t *out
         }
         output->size = 0;
         output->data = NULL;
-        if ((!source && length) || !u_base64_length(length, &encoded)) {
+        if (!source || !u_base64_length(length, &encoded)) {
                 return 0;
         }
         buffer = ulfius_malloc(encoded + 1);

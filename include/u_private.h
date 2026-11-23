@@ -130,7 +130,8 @@ void ulfius_start_websocket_cb (void *cls,
 /**
  * Generates a handhshake answer from the key given in parameter
  */
-int ulfius_generate_handshake_answer(const char * key, char * out_digest);
+#define U_WEBSOCKET_ACCEPT_CAPACITY 32
+int ulfius_generate_handshake_answer(const char * key, char out_digest[U_WEBSOCKET_ACCEPT_CAPACITY]);
 
 /**
  * Return a match list between two list of items

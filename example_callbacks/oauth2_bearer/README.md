@@ -41,3 +41,13 @@ g_config.accept_client_token = 0;
 // Example, add an authentication callback callback_check_glewlwyd_access_token for the endpoint GET "/api/resource/*"
 ulfius_add_endpoint_by_val(instance, "GET", "/api", "/resource/*", &callback_check_glewlwyd_access_token, (void*)g_config);
 ```
+
+## Build support
+
+Compile `src/u_string.c` and `src/u_token.c` from the matching Ulfius source
+release alongside this callback, with `include/` on the include path. A CMake
+installation also provides those sources and headers under
+`share/doc/ulfius/utility_support`; Make installs only the library and public
+headers. These private helpers use the library's public allocator and are not
+exported from `libulfius`. Do not compile a separate `u_memory.c`. Keep any
+additional dependencies documented for this callback.

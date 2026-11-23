@@ -331,7 +331,7 @@ START_TEST(test_ulfius_request)
   ck_assert_str_eq((char *)req1.binary_body, str_body);
   j_body2 = ulfius_get_json_body_request(&req1, NULL);
   ck_assert_int_eq(json_equal(j_body, j_body2), 1);
-  u_free(str_body);
+  free(str_body);
   json_decref(j_body);
   json_decref(j_body2);
   ck_assert_int_eq(u_map_put(req1.map_header, "ContenT-Type", "error"), U_OK);
@@ -944,7 +944,7 @@ START_TEST(test_ulfius_response)
   ck_assert_str_eq((const char *)resp1.binary_body, str_body);
   j_body2 = ulfius_get_json_body_response(&resp1, NULL);
   ck_assert_int_eq(json_equal(j_body, j_body2), 1);
-  u_free(str_body);
+  free(str_body);
   json_decref(j_body);
   json_decref(j_body2);
   ck_assert_int_eq(u_map_put(resp1.map_header, "ContenT-Type", "error"), U_OK);

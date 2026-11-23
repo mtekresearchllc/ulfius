@@ -22,7 +22,7 @@ PROJECT_NAME=ulfius
 PROJECT_DESCRIPTION=Web Framework to build REST APIs, Webservices or any HTTP endpoint in C language. Can stream large amount of data, integrate JSON data with Jansson, and create websocket services
 PROJECT_BUGREPORT_PATH=https://github.com/mtekresearchllc/ulfius/issues
 PKGCONF_REQ=
-PKGCONF_REQ_PRIVATE=libmicrohttpd zlib
+PKGCONF_REQ_PRIVATE=libmicrohttpd >= 0.9.51 zlib
 ULFIUS_INCLUDE=../include
 CONFIG_TEMPLATE=$(ULFIUS_INCLUDE)/ulfius-cfg.h.in
 CONFIG_FILE=$(ULFIUS_INCLUDE)/ulfius-cfg.h
@@ -63,7 +63,7 @@ endif
 ifndef GNUTLSFLAG
 DISABLE_GNUTLS=0
 LGNUTLS=-lgnutls
-PKGCONF_REQ_PRIVATE+=gnutls
+PKGCONF_REQ_PRIVATE+=gnutls >= 3.5.0
 else
 DISABLE_GNUTLS=1
 WEBSOCKETFLAG=1
@@ -71,6 +71,7 @@ endif
 
 ifndef WEBSOCKETFLAG
 DISABLE_WEBSOCKET=0
+PKGCONF_REQ_PRIVATE+=libmicrohttpd >= 0.9.53
 DISABLE_WEBSOCKET_MESSAGE=0
 else
 DISABLE_WEBSOCKET=1
