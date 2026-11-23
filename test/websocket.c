@@ -2,11 +2,14 @@
 
 #include <check.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/socket.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <ulfius.h>
+#include <u_private.h>
 #include <zlib.h>
 #include <curl/curl.h>
 
@@ -42,12 +45,203 @@
 #define U_W_FLAG_SERVER  0x00000001
 #define U_W_FLAG_CONTEXT 0x00000010
 
-#define UNUSED(x) (void)(x)
-
 static pthread_mutex_t ws_lock;
 static pthread_cond_t  ws_cond;
 
 #ifndef U_DISABLE_WEBSOCKET
+
+#define BACKPRESSURE_PAYLOAD_SIZE (256 * 1024)
+
+typedef struct {
+        struct _websocket_manager manager;
+        int result;
+        int next_result;
+} backpressure_sender_t;
+
+static void *backpressure_send(void *argument)
+{
+        backpressure_sender_t *sender = argument;
+        char *payload = malloc(BACKPRESSURE_PAYLOAD_SIZE);
+
+        ck_assert_ptr_nonnull(payload);
+        memset(payload, 'a', BACKPRESSURE_PAYLOAD_SIZE);
+        sender->result = ulfius_websocket_send_message(&sender->manager,
+                U_WEBSOCKET_OPCODE_TEXT, BACKPRESSURE_PAYLOAD_SIZE, payload);
+        sender->next_result = ulfius_websocket_send_message(&sender->manager,
+                U_WEBSOCKET_OPCODE_TEXT, 4, "next");
+        free(payload);
+        return NULL;
+}
+
+static void backpressure_start(backpressure_sender_t *sender, int sockets[2], pthread_t *thread)
+{
+        int buffer_size = 4096;
+
+        memset(sender, 0, sizeof(*sender));
+        ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+        ck_assert_int_eq(setsockopt(sockets[0], SOL_SOCKET, SO_SNDBUF,
+                                   &buffer_size, sizeof(buffer_size)), 0);
+        ck_assert_int_eq(fcntl(sockets[0], F_SETFL, O_NONBLOCK), 0);
+        sender->manager.type = U_WEBSOCKET_SERVER;
+        sender->manager.connected = 1;
+        sender->manager.mhd_sock = sockets[0];
+        sender->manager.fds_out.fd = sockets[0];
+        sender->manager.fds_out.events = POLLOUT;
+        ck_assert_int_eq(pthread_mutex_init(&sender->manager.write_lock, NULL), 0);
+        ck_assert_int_eq(pthread_create(thread, NULL, backpressure_send, sender), 0);
+}
+
+START_TEST(test_ulfius_websocket_backpressure)
+{
+        backpressure_sender_t sender;
+        int sockets[2];
+        pthread_t thread;
+        size_t offset = 0;
+        const size_t expected = BACKPRESSURE_PAYLOAD_SIZE + 10 + 6;
+        uint8_t *received = malloc(expected);
+        struct pollfd input;
+        ssize_t count;
+        uint8_t header[] = {0x81, 0x7f, 0, 0, 0, 0, 0, 4, 0, 0};
+
+        ck_assert_ptr_nonnull(received);
+        backpressure_start(&sender, sockets, &thread);
+        // exceed several write polling intervals before consuming any bytes
+        usleep(250000);
+        input.fd = sockets[1];
+        input.events = POLLIN;
+        while (offset < expected) {
+                ck_assert_int_gt(poll(&input, 1, 2000), 0);
+                count = read(sockets[1], received + offset, expected - offset);
+                ck_assert_int_gt(count, 0);
+                offset += (size_t)count;
+        }
+        ck_assert_int_eq(pthread_join(thread, NULL), 0);
+        ck_assert_int_eq(sender.result, U_OK);
+        ck_assert_int_eq(sender.next_result, U_OK);
+        ck_assert_int_eq(memcmp(received, header, sizeof(header)), 0);
+        for (offset = 10; offset < BACKPRESSURE_PAYLOAD_SIZE + 10; offset++) {
+                ck_assert_int_eq(received[offset], 'a');
+        }
+        ck_assert_int_eq(memcmp(received + BACKPRESSURE_PAYLOAD_SIZE + 10,
+                               "\x81\x04next", 6), 0);
+        close(sockets[0]);
+        close(sockets[1]);
+        pthread_mutex_destroy(&sender.manager.write_lock);
+        free(received);
+}
+END_TEST
+
+START_TEST(test_ulfius_websocket_partial_write_disconnect)
+{
+        backpressure_sender_t sender;
+        int sockets[2];
+        pthread_t thread;
+        char received[32];
+
+        backpressure_start(&sender, sockets, &thread);
+        ck_assert_int_gt(read(sockets[1], received, sizeof(received)), 0);
+        close(sockets[1]);
+        ck_assert_int_eq(pthread_join(thread, NULL), 0);
+        ck_assert_int_ne(sender.result, U_OK);
+        ck_assert_int_ne(sender.next_result, U_OK);
+        ck_assert_int_eq(sender.manager.connected, 0);
+        close(sockets[0]);
+        pthread_mutex_destroy(&sender.manager.write_lock);
+}
+END_TEST
+
+START_TEST(test_ulfius_websocket_partial_write_shutdown)
+{
+        backpressure_sender_t sender;
+        int sockets[2];
+        pthread_t thread;
+        char received[32];
+
+        backpressure_start(&sender, sockets, &thread);
+        ck_assert_int_gt(read(sockets[1], received, sizeof(received)), 0);
+        ck_assert_int_eq(ulfius_websocket_send_close_signal(&sender.manager), U_OK);
+        ck_assert_int_eq(pthread_join(thread, NULL), 0);
+        ck_assert_int_ne(sender.result, U_OK);
+        ck_assert_int_ne(sender.next_result, U_OK);
+        ck_assert_int_eq(sender.manager.connected, 0);
+        close(sockets[0]);
+        close(sockets[1]);
+        pthread_mutex_destroy(&sender.manager.write_lock);
+}
+END_TEST
+
+START_TEST(test_ulfius_websocket_pending_close_frame)
+{
+        struct _websocket_manager manager = {0};
+        int sockets[2];
+        uint8_t received[2];
+
+        ck_assert_int_eq(socketpair(AF_UNIX, SOCK_STREAM, 0, sockets), 0);
+        manager.type = U_WEBSOCKET_SERVER;
+        manager.connected = 1;
+        manager.close_flag = 1;
+        manager.mhd_sock = sockets[0];
+        ck_assert_int_eq(pthread_mutex_init(&manager.write_lock, NULL), 0);
+        ck_assert_int_eq(ulfius_websocket_send_message(&manager,
+                U_WEBSOCKET_OPCODE_CLOSE, 0, NULL), U_OK);
+        ck_assert_int_eq(recv(sockets[1], received, sizeof(received), MSG_WAITALL), 2);
+        ck_assert_int_eq(received[0], 0x88);
+        ck_assert_int_eq(received[1], 0);
+        close(sockets[0]);
+        close(sockets[1]);
+        pthread_mutex_destroy(&manager.write_lock);
+}
+END_TEST
+
+static pthread_mutex_t * registry_lock;
+
+static void * fail_registry_resize(void * ptr, size_t size) {
+  UNUSED(ptr);
+  UNUSED(size);
+  ck_assert_int_eq(pthread_mutex_trylock(registry_lock), EBUSY);
+  return NULL;
+}
+
+START_TEST(test_ulfius_websocket_registry_allocation_failure)
+{
+  // A nonrecursive mutex makes the locking contract observable from the allocator.
+  struct _websocket_handler handler = {.websocket_active_lock = PTHREAD_MUTEX_INITIALIZER,
+                                       .websocket_close_cond = PTHREAD_COND_INITIALIZER};
+  struct _u_instance instance = {.websocket_handler = &handler};
+  struct _websocket first = {0}, second = {0};
+  o_malloc_t malloc_fn;
+  o_realloc_t realloc_fn;
+  o_free_t free_fn;
+  int ret;
+
+  registry_lock = &handler.websocket_active_lock;
+  ck_assert_int_eq(ulfius_instance_add_websocket_active(&instance, &first), U_OK);
+  o_get_alloc_funcs(&malloc_fn, &realloc_fn, &free_fn);
+  o_set_alloc_funcs(malloc_fn, fail_registry_resize, free_fn);
+  ret = ulfius_instance_add_websocket_active(&instance, &second);
+  o_set_alloc_funcs(malloc_fn, realloc_fn, free_fn);
+  ck_assert_int_eq(ret, U_ERROR_MEMORY);
+  ck_assert_uint_eq(handler.nb_websocket_active, 1);
+  ck_assert_ptr_nonnull(handler.websocket_active);
+  ck_assert_ptr_eq(handler.websocket_active[0], &first);
+
+  ck_assert_int_eq(ulfius_instance_add_websocket_active(&instance, &second), U_OK);
+  o_set_alloc_funcs(malloc_fn, fail_registry_resize, free_fn);
+  ret = ulfius_instance_remove_websocket_active(&instance, &first);
+  o_set_alloc_funcs(malloc_fn, realloc_fn, free_fn);
+  ck_assert_int_eq(ret, U_OK);
+  ck_assert_uint_eq(handler.nb_websocket_active, 1);
+  ck_assert_ptr_nonnull(handler.websocket_active);
+  ck_assert_ptr_eq(handler.websocket_active[0], &second);
+
+  ck_assert_int_eq(ulfius_instance_remove_websocket_active(&instance, &second), U_OK);
+  ck_assert_uint_eq(handler.nb_websocket_active, 0);
+  ck_assert_ptr_null(handler.websocket_active);
+  registry_lock = NULL;
+  pthread_cond_destroy(&handler.websocket_close_cond);
+  pthread_mutex_destroy(&handler.websocket_active_lock);
+}
+END_TEST
 
 void websocket_manager_callback_empty (const struct _u_request * request, struct _websocket_manager * websocket_manager, void * websocket_manager_user_data) {
   UNUSED(request);
@@ -1288,6 +1482,11 @@ static Suite *ulfius_suite(void)
 	s = suite_create("Ulfius websocket functions tests");
 	tc_websocket = tcase_create("test_ulfius_websocket");
 #ifndef U_DISABLE_WEBSOCKET
+  tcase_add_test(tc_websocket, test_ulfius_websocket_backpressure);
+  tcase_add_test(tc_websocket, test_ulfius_websocket_partial_write_disconnect);
+  tcase_add_test(tc_websocket, test_ulfius_websocket_partial_write_shutdown);
+  tcase_add_test(tc_websocket, test_ulfius_websocket_pending_close_frame);
+  tcase_add_test(tc_websocket, test_ulfius_websocket_registry_allocation_failure);
   tcase_add_test(tc_websocket, test_ulfius_websocket_set_websocket_response);
 	tcase_add_test(tc_websocket, test_ulfius_websocket_set_websocket_request);
 	tcase_add_test(tc_websocket, test_ulfius_websocket_open_websocket_client_connection_error);
