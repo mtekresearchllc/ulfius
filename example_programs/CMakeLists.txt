@@ -60,7 +60,7 @@ find_package(Threads REQUIRED)
 set(LIBS ${LIBS} ${CMAKE_THREAD_LIBS_INIT})
 
 include(FindUlfius)
-set(ULFIUS_MIN_VERSION "2.6")
+set(ULFIUS_MIN_VERSION "3.0")
 find_package(Ulfius ${ULFIUS_MIN_VERSION} REQUIRED)
 set(LIBS ${LIBS} ${ULFIUS_LIBRARIES} "-ljansson")
 include_directories(${ULFIUS_INCLUDE_DIRS})

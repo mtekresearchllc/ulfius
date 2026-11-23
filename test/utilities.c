@@ -228,6 +228,7 @@ static void test_base64(void)
         REQUIRE(length == 0);
         REQUIRE(!u_base64_encode((const uint8_t *)"x", SIZE_MAX, buffer, sizeof(buffer), &length));
         REQUIRE(!u_base64_encode(NULL, 1, buffer, sizeof(buffer), &length));
+        REQUIRE(!u_base64_encode(NULL, 0, buffer, sizeof(buffer), &length));
         REQUIRE(!u_base64_encode_alloc(NULL, 0, &result));
         REQUIRE(!result.data && result.size == 0);
         fail_after = 0;

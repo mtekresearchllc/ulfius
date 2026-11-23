@@ -600,6 +600,7 @@ static int ulfius_webservice_dispatcher (void * cls,
 
         // Initialize auth variables
         if (u_mhd_copy_basic_auth(connection, con_info->request) != U_OK) {
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error copying basic authentication credentials");
           mhd_ret = MHD_NO;
           ulfius_clean_response_full(response);
           response = NULL;
