@@ -1662,10 +1662,9 @@ void ulfius_clean_instance(struct _u_instance * u_instance) {
     /* ulfius_clean_instance might be called without websocket_handler being initialized */
     if ((struct _websocket_handler *)u_instance->websocket_handler) {
       if (((struct _websocket_handler *)u_instance->websocket_handler)->pthread_init &&
-          (pthread_mutex_destroy(&((struct _websocket_handler *)u_instance->websocket_handler)->websocket_close_lock) ||
-          pthread_cond_destroy(&((struct _websocket_handler *)u_instance->websocket_handler)->websocket_close_cond) ||
+          (pthread_cond_destroy(&((struct _websocket_handler *)u_instance->websocket_handler)->websocket_close_cond) ||
           pthread_mutex_destroy(&((struct _websocket_handler *)u_instance->websocket_handler)->websocket_active_lock))) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error destroying websocket_close_lock or websocket_close_cond or websocket_active_lock");
+        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error destroying websocket_close_cond or websocket_active_lock");
       }
       o_free(u_instance->websocket_handler);
       u_instance->websocket_handler = NULL;
@@ -1738,9 +1737,8 @@ UNUSED(network_type);
     ((struct _websocket_handler *)u_instance->websocket_handler)->pthread_init = 0;
     ((struct _websocket_handler *)u_instance->websocket_handler)->nb_websocket_active = 0;
     ((struct _websocket_handler *)u_instance->websocket_handler)->websocket_active = NULL;
-    if (pthread_mutex_init(&((struct _websocket_handler *)u_instance->websocket_handler)->websocket_close_lock, NULL) ||
-        pthread_cond_init(&((struct _websocket_handler *)u_instance->websocket_handler)->websocket_close_cond, NULL)) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error initializing websocket_close_lock or websocket_close_cond");
+    if (pthread_cond_init(&((struct _websocket_handler *)u_instance->websocket_handler)->websocket_close_cond, NULL)) {
+      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error initializing websocket_close_cond");
       ulfius_clean_instance(u_instance);
       return U_ERROR_MEMORY;
     }

@@ -2162,7 +2162,7 @@ struct _websocket_handler {
   pthread_mutex_t               websocket_active_lock; /* !< mutex to change nb_websocket_active value */
   size_t                        nb_websocket_active; /* !< number of active websocket */
   struct _websocket          ** websocket_active; /* !< array of active websocket */
-  pthread_mutex_t               websocket_close_lock; /* !< mutex to broadcast close signal */
+  pthread_mutex_t               websocket_close_lock; /* !< unused storage retained for ABI compatibility */
   pthread_cond_t                websocket_close_cond; /* !< condition to broadcast close signal */
   int                           pthread_init;
 };
