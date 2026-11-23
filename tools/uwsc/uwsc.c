@@ -24,37 +24,11 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <ulfius.h>
 
-/** Define mock yder functions when yder is disabled **/
-#ifdef U_DISABLE_YDER
-int y_init_logs(const char * app, const unsigned long init_mode, const unsigned long init_level, const char * init_log_file, const char * message) {
-  (void)(app);
-  (void)(init_mode);
-  (void)(init_level);
-  (void)(init_log_file);
-  (void)(message);
-  return 1;
-}
-
-int y_set_logs_callback(void (* y_callback_log_message) (void * cls, const char * app_name, const time_t date, const unsigned long level, const char * message), void * cls, const char * message) {
-  (void)(y_callback_log_message);
-  (void)(cls);
-  (void)(message);
-  return 1;
-}
-
-void y_log_message(const unsigned long type, const char * message, ...) {
-  (void)(type);
-  (void)(message);
-}
-
-int y_close_logs() {
-  return 1;
-}
-#endif
 
 #define _UWSC_VERSION_ "0.12"
 
@@ -62,6 +36,7 @@ int y_close_logs() {
 
 struct _config {
   char       * log_path;
+  FILE       * log_file;
   char       * binary_file_send;
   char       * text_file_send;
   int          non_interactive;
@@ -73,6 +48,24 @@ struct _config {
   struct _u_request * request;
   struct _u_response * response;
 };
+
+static void uwsc_log_callback(void *user_data, ulfius_log_level_t level,
+        const char *message)
+{
+        FILE *stream = user_data;
+
+        const char *names[] = { "INVALID", "NONE", "ERROR", "WARNING", "INFO", "DEBUG" };
+        struct tm local;
+        time_t now = time(NULL);
+        char timestamp[32] = "unknown-time";
+
+        if (localtime_r(&now, &local) != NULL) {
+                strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", &local);
+        }
+        fprintf(stream, "%s [%s] %s\n", timestamp,
+                names[level >= ULFIUS_LOG_ERROR && level <= ULFIUS_LOG_DEBUG ? level : 0], message);
+        fflush(stream);
+}
 
 static char * read_file(const char * filename, size_t * filesize) {
   char * buffer = NULL;
@@ -115,20 +108,20 @@ static void uwsc_manager_callback (const struct _u_request * request, struct _we
     file_content = read_file(config->text_file_send, &file_len);
     if (file_content != NULL && file_len > 0) {
       if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, file_len, file_content) != U_OK) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Error sending text file");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Error sending text file");
       }
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Error reading file %s", config->text_file_send);
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Error reading file %s", config->text_file_send);
     }
     o_free(file_content);
   } else if (config->binary_file_send != NULL) {
     file_content = read_file(config->binary_file_send, &file_len);
     if (file_content != NULL && file_len > 0) {
       if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_BINARY, file_len, file_content) != U_OK) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Error sending binary file");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Error sending binary file");
       }
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Error reading file %s", config->binary_file_send);
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Error reading file %s", config->binary_file_send);
     }
     o_free(file_content);
   }
@@ -141,7 +134,7 @@ static void uwsc_manager_callback (const struct _u_request * request, struct _we
               fprintf(stdout, "\b\bQuit uwsc\n");
             }
             if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_CLOSE, 0, NULL) != U_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Error sending close message");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Error sending close message");
             }
           } else {
             if (!config->quiet) {
@@ -149,7 +142,7 @@ static void uwsc_manager_callback (const struct _u_request * request, struct _we
               fflush(stdout);
             }
             if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(message)-1, message) != U_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Error sending message '%.*s'", (int)(o_strlen(message)-1), message);
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Error sending message '%.*s'", (int)(o_strlen(message)-1), message);
             }
           }
         }
@@ -197,7 +190,7 @@ static void print_help(FILE * output) {
   fprintf(output, "Command-line options:\n");
   fprintf(output, "\n");
   fprintf(output, "-o --output-log-file=PATH\n");
-  fprintf(output, "\tPrint yder log messages in a file\n");
+  fprintf(output, "\tPrint Ulfius log messages in a file\n");
   fprintf(output, "-x --add-header=HEADER\n");
   fprintf(output, "\tAdd the specified header of the form 'key:value'\n");
   fprintf(output, "-b --send-binary-file=PATH\n");
@@ -227,6 +220,7 @@ static void print_help(FILE * output) {
 static int init_config(struct _config * config) {
   if (config != NULL) {
     config->log_path = NULL;
+    config->log_file = NULL;
     config->binary_file_send = NULL;
     config->text_file_send = NULL;
     config->non_interactive = 0;
@@ -257,6 +251,11 @@ static int init_config(struct _config * config) {
 
 static void exit_program(struct _config ** config, int exit_value) {
   if (config != NULL) {
+    if ((*config)->log_file != NULL) {
+      if (ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL) == U_OK) {
+        fclose((*config)->log_file);
+      }
+    }
     o_free((*config)->log_path);
     o_free((*config)->binary_file_send);
     o_free((*config)->text_file_send);
@@ -376,7 +375,16 @@ int main (int argc, char ** argv) {
   } while (next_option != -1);
 
   if (config->log_path != NULL) {
-    y_init_logs("Ulfius Websocket Client", Y_LOG_MODE_FILE, Y_LOG_LEVEL_DEBUG, config->log_path, "Start uwsc");
+    config->log_file = fopen(config->log_path, "a");
+    if (config->log_file == NULL) {
+      perror("opening log file");
+      exit_program(&config, 1);
+    }
+    if (ulfius_set_log_callback(ULFIUS_LOG_DEBUG, uwsc_log_callback, config->log_file) != U_OK) {
+      fprintf(stderr, "Error initializing log callback\n");
+      exit_program(&config, 1);
+    }
+    ulfius_log_message(ULFIUS_LOG_INFO, "Start uwsc");
   }
 
   if (optind < argc) {
@@ -414,22 +422,19 @@ int main (int argc, char ** argv) {
       } else {
         fprintf(stderr, "Error connecting to websocket\n");
         fflush(stdout);
-        y_log_message(Y_LOG_LEVEL_ERROR, "Error connecting to websocket");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Error connecting to websocket");
       }
     } else {
       fprintf(stderr, "Error initializing websocket request\n");
       fflush(stdout);
-      y_log_message(Y_LOG_LEVEL_ERROR, "Error initializing websocket request");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Error initializing websocket request");
     }
   } else {
     fprintf(stderr, "Error ulfius_add_websocket_client_deflate_extension\n");
-    y_log_message(Y_LOG_LEVEL_ERROR, "Error initializing websocket request");
+    ulfius_log_message(ULFIUS_LOG_ERROR, "Error initializing websocket request");
   }
   o_free(extensions);
 
-  if (config->log_path != NULL) {
-    y_close_logs();
-  }
   exit_program(&config, 0);
   return 0;
 }

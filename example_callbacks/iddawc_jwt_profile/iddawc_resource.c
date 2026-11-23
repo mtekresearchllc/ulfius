@@ -172,21 +172,21 @@ int callback_check_jwt_profile_access_token (const struct _u_request * request, 
             }
           }
         } else {
-          y_log_message(Y_LOG_LEVEL_WARNING, "Security - Invalid access token from address %s", get_ip_source(request));
+          ulfius_log_message(ULFIUS_LOG_WARNING, "Security - Invalid access token from address %s", get_ip_source(request));
           response_value = msprintf(HEADER_PREFIX_BEARER "%s%s%serror=\"invalid_request\",error_description=\"The access token is invalid\"", (config->realm!=NULL?"realm=":""), (config->realm!=NULL?config->realm:""), (config->realm!=NULL?",":""));
           u_map_put(response->map_header, HEADER_RESPONSE, response_value);
           o_free(response_value);
         }
         json_decref(j_access_token);
       } else {
-        y_log_message(Y_LOG_LEVEL_ERROR, "callback_check_jwt_profile_access_token - Error pthread_mutex_lock");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "callback_check_jwt_profile_access_token - Error pthread_mutex_lock");
         response_value = msprintf(HEADER_PREFIX_BEARER "%s%s%serror=\"invalid_request\",error_description=\"Internal server error\"", (config->realm!=NULL?"realm=":""), (config->realm!=NULL?config->realm:""), (config->realm!=NULL?",":""));
         u_map_put(response->map_header, HEADER_RESPONSE, response_value);
         o_free(response_value);
       }
       pthread_mutex_unlock(&config->session_lock);
     } else {
-      y_log_message(Y_LOG_LEVEL_WARNING, "Security - Missing access token from address %s", get_ip_source(request));
+      ulfius_log_message(ULFIUS_LOG_WARNING, "Security - Missing access token from address %s", get_ip_source(request));
       response_value = msprintf(HEADER_PREFIX_BEARER "%s%s%serror=\"invalid_token\",error_description=\"The access token is missing\"", (config->realm!=NULL?"realm=":""), (config->realm!=NULL?config->realm:""), (config->realm!=NULL?",":""));
       u_map_put(response->map_header, HEADER_RESPONSE, response_value);
       o_free(response_value);
@@ -237,12 +237,12 @@ int i_jwt_profile_access_token_load_config(struct _iddawc_resource_config * conf
                                               I_OPT_REMOTE_CERT_FLAG, verify_cert?(I_REMOTE_HOST_VERIFY_PEER|I_REMOTE_HOST_VERIFY_HOSTNAME|I_REMOTE_PROXY_VERIFY_PEER|I_REMOTE_PROXY_VERIFY_HOSTNAME):I_REMOTE_VERIFY_NONE,
                                               I_OPT_NONE) != I_OK) {
       ret = 0;
-      y_log_message(Y_LOG_LEVEL_ERROR, "oidc_resource_init_config - Error i_set_parameter_list");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "oidc_resource_init_config - Error i_set_parameter_list");
     }
     
     if (i_get_openid_config(config->session) != I_OK) {
       ret = 0;
-      y_log_message(Y_LOG_LEVEL_ERROR, "oidc_resource_init_config - Error i_get_openid_config");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "oidc_resource_init_config - Error i_get_openid_config");
     }
   } while (0);
   return ret;

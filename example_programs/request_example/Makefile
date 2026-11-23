@@ -17,11 +17,8 @@ ULFIUS_LOCATION=../../src
 ULFIUS_INCLUDE=../../include
 EXAMPLE_INCLUDE=../include
 CFLAGS+=-c -Wall -D_REENTRANT $(ADDITIONALFLAGS) -I$(ULFIUS_INCLUDE) -I$(EXAMPLE_INCLUDE) $(CPPFLAGS)
-LIBS=-lc -ljansson -lorcania -lulfius -L$(ULFIUS_LOCATION)
+LIBS=u_example.o -lc -ljansson -lorcania -lulfius -L$(ULFIUS_LOCATION)
 
-ifndef YDERFLAG
-LIBS+= -lyder
-endif
 
 all: client server mail
 
@@ -38,17 +35,20 @@ debug: client server mail
 client.o: client.c ../../src/libulfius.so
 	$(CC) $(CFLAGS) client.c -DDEBUG -g -O0
 
-client: client.o
+client: client.o u_example.o
 	$(CC) -o client client.o $(LIBS)
 
 server.o: server.c ../../src/libulfius.so
 	$(CC) $(CFLAGS) server.c -DDEBUG -g -O0
 
-server: server.o
+server: server.o u_example.o
 	$(CC) -o server server.o $(LIBS)
 
 mail.o: mail.c ../../src/libulfius.so
 	$(CC) $(CFLAGS) mail.c -DDEBUG -g -O0
 
-mail: mail.o
+mail: mail.o u_example.o
 	$(CC) -o mail mail.o $(LIBS)
+
+u_example.o: ../u_example.c ../include/u_example.h
+	$(CC) $(CFLAGS) ../u_example.c -o $@

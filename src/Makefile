@@ -31,19 +31,18 @@ PKGCONFIG_TEMPLATE=../libulfius.pc.in
 DESTDIR=/usr/local
 CC=gcc
 CFLAGS+=-c -pedantic -std=gnu99 -fPIC -Wall -Werror -Wextra -Wconversion -Wpedantic -D_REENTRANT -I$(ULFIUS_INCLUDE) $(ADDITIONALFLAGS) $(CPPFLAGS)
-LIBSDEP=-lmicrohttpd -lpthread -lz
+LIBSDEP=-lorcania -lmicrohttpd -lpthread -lz
 LIBS=-L$(DESTDIR)/lib -lc $(LDFLAGS)
 LIB_STATIC=
-LIB_YDER=
 SONAME = -soname
 ifeq ($(shell uname -s),Darwin)
 	SONAME = -install_name
 endif
-OBJECTS=ulfius.o u_map.o u_request.o u_response.o u_send_request.o u_websocket.o yuarel.o
+OBJECTS=ulfius.o u_map.o u_request.o u_response.o u_send_request.o u_websocket.o yuarel.o u_logging.o
 OUTPUT=libulfius.so
-VERSION_MAJOR=2
-VERSION_MINOR=7
-VERSION_PATCH=17
+VERSION_MAJOR=3
+VERSION_MINOR=0
+VERSION_PATCH=0
 
 ifndef JANSSONFLAG
 DISABLE_JANSSON=0
@@ -80,13 +79,6 @@ else
 DISABLE_WEBSOCKET_MESSAGE=1
 endif
 
-ifndef YDERFLAG
-DISABLE_YDER=0
-LYDER=-lyder
-LIB_YDER=$(LYDER)
-else
-DISABLE_YDER=1
-endif
 
 ifndef FREERTOSFLAG
 WITH_FREERTOS=0
@@ -154,13 +146,6 @@ $(CONFIG_FILE):
 		sed -i -e 's/\#cmakedefine U_DISABLE_WS_MESSAGE_LIST/\/* #undef U_DISABLE_WS_MESSAGE_LIST *\//g' $(CONFIG_FILE); \
 		echo "WS MESSAGE LIST    ENABLED"; \
 	fi
-	@if [ "$(DISABLE_YDER)" = "1" ]; then \
-		sed -i -e 's/\#cmakedefine U_DISABLE_YDER/\#define U_DISABLE_YDER/g' $(CONFIG_FILE); \
-		echo "YDER SUPPORT       DISABLED"; \
-	else \
-		sed -i -e 's/\#cmakedefine U_DISABLE_YDER/\/* #undef U_DISABLE_YDER *\//g' $(CONFIG_FILE); \
-		echo "YDER SUPPORT       ENABLED"; \
-	fi
 	@if [ "$(WITH_FREERTOS)" = "1" ]; then \
 		sed -i -e 's/\#cmakedefine U_WITH_FREERTOS/\#define U_WITH_FREERTOS/g' $(CONFIG_FILE); \
 		echo "FREERTOS SUPPORT   ENABLED"; \
@@ -189,16 +174,16 @@ $(PKGCONFIG_FILE):
 	@sed -i -e 's/@PKGCONF_REQ@/$(PKGCONF_REQ)/g' $(PKGCONFIG_FILE)
 	@sed -i -e 's/@PKGCONF_REQ_PRIVATE@/$(PKGCONF_REQ_PRIVATE)/g' $(PKGCONFIG_FILE)
 	@sed -i -e 's/@LIB_STATIC@/$(LIB_STATIC)/g' $(PKGCONFIG_FILE)
-	@sed -i -e 's/@LIB_YDER@/$(LIB_YDER)/g' $(PKGCONFIG_FILE)
 
 target: $(OBJECTS)
 
-%.o: %.c $(CONFIG_FILE) $(ULFIUS_INCLUDE)/ulfius.h $(ULFIUS_INCLUDE)/u_private.h $(ULFIUS_INCLUDE)/yuarel.h
+%.o: %.c $(CONFIG_FILE) $(ULFIUS_INCLUDE)/ulfius.h $(ULFIUS_INCLUDE)/u_private.h $(ULFIUS_INCLUDE)/yuarel.h $(ULFIUS_INCLUDE)/u_logging.h
 	$(CC) $(CFLAGS) $<
 
 libulfius.so: $(OBJECTS) $(PKGCONFIG_FILE)
-	$(CC) -shared -fPIC -Wl,$(SONAME),$(OUTPUT) -o $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(OBJECTS) $(LIBS) $(LIBSDEP) $(LYDER) $(LJANSSON) $(LCURL) $(LGNUTLS)
-	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(OUTPUT)
+	$(CC) -shared -fPIC -Wl,$(SONAME),$(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR) -o $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(OBJECTS) $(LIBS) $(LIBSDEP) $(LJANSSON) $(LCURL) $(LGNUTLS)
+	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR)
+	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR) $(OUTPUT)
 
 libulfius.a: $(OBJECTS) $(PKGCONFIG_FILE)
 	ar rcs libulfius.a $(OBJECTS)
@@ -207,10 +192,12 @@ clean:
 	rm -f *.o *.so *.a $(OUTPUT) $(OUTPUT).* $(CONFIG_FILE) $(PKGCONFIG_FILE)
 
 install: all $(PKGCONFIG_FILE)
-	install $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(DESTDIR)/lib
 	mkdir -p $(DESTDIR)/lib/pkgconfig/ $(DESTDIR)/include
+	install $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(DESTDIR)/lib
+	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_PATCH) $(DESTDIR)/lib/$(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR)
+	ln -sf $(OUTPUT).$(VERSION_MAJOR).$(VERSION_MINOR) $(DESTDIR)/lib/$(OUTPUT)
 	install -m644 $(PKGCONFIG_FILE) $(DESTDIR)/lib/pkgconfig/
-	install -m644 $(ULFIUS_INCLUDE)/ulfius.h $(DESTDIR)/include
+	install -m644 $(ULFIUS_INCLUDE)/ulfius.h $(ULFIUS_INCLUDE)/u_logging.h $(DESTDIR)/include
 	install -m644 $(CONFIG_FILE) $(DESTDIR)/include
 	-ldconfig $(DESTDIR)/lib
 
@@ -218,13 +205,13 @@ static-install: static
 	install libulfius.a $(DESTDIR)/lib
 	mkdir -p $(DESTDIR)/lib/pkgconfig/ $(DESTDIR)/include
 	install -m644 $(PKGCONFIG_FILE) $(DESTDIR)/lib/pkgconfig
-	install -m644 $(ULFIUS_INCLUDE)/ulfius.h $(DESTDIR)/include
+	install -m644 $(ULFIUS_INCLUDE)/ulfius.h $(ULFIUS_INCLUDE)/u_logging.h $(DESTDIR)/include
 	install -m644 $(CONFIG_FILE) $(DESTDIR)/include
 
 uninstall:
 	rm -f $(DESTDIR)/lib/$(OUTPUT) $(DESTDIR)/lib/libulfius.a
 	rm -f $(DESTDIR)/lib/$(OUTPUT).*
-	rm -f $(DESTDIR)/include/ulfius.h
+	rm -f $(DESTDIR)/include/ulfius.h $(DESTDIR)/include/u_logging.h
 	rm -f $(DESTDIR)/include/$(CONFIG_FILE)
 	rm -f $(DESTDIR)/lib/pkgconfig/$(PKGCONFIG_FILE)
 
@@ -238,7 +225,7 @@ release: libulfius.so
 
 static: ADDITIONALFLAGS=-O3
 
-static: LIB_STATIC=$(LIBSDEP) $(LYDER) $(LJANSSON) $(LCURL) $(LGNUTLS)
+static: LIB_STATIC=$(LIBSDEP) $(LJANSSON) $(LCURL) $(LGNUTLS)
 
 static: libulfius.a
 

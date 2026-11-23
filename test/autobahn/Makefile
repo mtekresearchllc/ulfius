@@ -15,8 +15,8 @@ CERT_LOCATION=../cert
 KEY_FILE=server.key
 CERT_FILE=server.crt
 
-CFLAGS+=-Wall -I$(ULFIUS_INCLUDE) $(ADDITIONALFLAGS) $(CPPFLAGS)
-LIBS=-lc -lulfius -lorcania -lyder -lpthread $(LYDER) -L$(ULFIUS_LOCATION)
+CFLAGS+=-Wall -I$(ULFIUS_INCLUDE) -I../../example_programs/include $(ADDITIONALFLAGS) $(CPPFLAGS)
+LIBS=-lc -lulfius -lorcania -lpthread -L$(ULFIUS_LOCATION)
 
 clean:
 	rm -f ulfius_ws_echo_server ulfius_ws_echo_client ulfius_ws_echo_server.log ulfius_ws_echo_client.log $(CONF_FOLDER)/$(KEY_FILE) $(CONF_FOLDER)/$(CERT_FILE) $(GEN_FOLDER)/server $(GEN_FOLDER)/client-http $(GEN_FOLDER)/client-https
@@ -31,10 +31,10 @@ $(ULFIUS_LOCATION)/libulfius.so:
 	cd $(ULFIUS_LOCATION) && $(MAKE) debug $*
 
 ulfius_ws_echo_server: ulfius_ws_echo_server.c $(ULFIUS_LOCATION)/libulfius.so
-	$(CC) -o ulfius_ws_echo_server ulfius_ws_echo_server.c $(CFLAGS) $(LIBS)
+	$(CC) -o ulfius_ws_echo_server ulfius_ws_echo_server.c ../../example_programs/u_example.c $(CFLAGS) $(LIBS)
 
 ulfius_ws_echo_client: ulfius_ws_echo_client.c $(ULFIUS_LOCATION)/libulfius.so
-	$(CC) -o ulfius_ws_echo_client ulfius_ws_echo_client.c $(CFLAGS) $(LIBS)
+	$(CC) -o ulfius_ws_echo_client ulfius_ws_echo_client.c ../../example_programs/u_example.c $(CFLAGS) $(LIBS)
 
 docker-autobahn:
 	docker build -t ulfius/autobahn:base -f Dockerfile .

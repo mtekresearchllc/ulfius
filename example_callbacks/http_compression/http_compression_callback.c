@@ -93,12 +93,12 @@ int callback_http_compression (const struct _u_request * request, struct _u_resp
                            U_GZIP_WINDOW_BITS | U_GZIP_ENCODING,
                            8,
                            Z_DEFAULT_STRATEGY) != Z_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "callback_http_compression - Error deflateInit (gzip)");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "callback_http_compression - Error deflateInit (gzip)");
             ret = U_CALLBACK_ERROR;
           }
         } else {
           if (deflateInit(&defstream, Z_BEST_COMPRESSION) != Z_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "callback_http_compression - Error deflateInit (deflate)");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "callback_http_compression - Error deflateInit (deflate)");
             ret = U_CALLBACK_ERROR;
           }
         }
@@ -113,13 +113,13 @@ int callback_http_compression (const struct _u_request * request, struct _u_resp
                 case Z_BUF_ERROR:
                   break;
                 default:
-                  y_log_message(Y_LOG_LEVEL_ERROR, "callback_http_compression - Error deflate %d", res);
+                  ulfius_log_message(ULFIUS_LOG_ERROR, "callback_http_compression - Error deflate %d", res);
                   ret = U_CALLBACK_ERROR;
                   break;
               }
               data_zip_len += _U_C_BLOCK_SIZE - defstream.avail_out;
             } else {
-              y_log_message(Y_LOG_LEVEL_ERROR, "callback_http_compression - Error allocating resources for data_zip");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "callback_http_compression - Error allocating resources for data_zip");
               ret = U_CALLBACK_ERROR;
             }
           } while (U_CALLBACK_IGNORE == ret && defstream.avail_out == 0);

@@ -17,11 +17,8 @@ ULFIUS_LOCATION=../../src
 ULFIUS_INCLUDE=../../include
 EXAMPLE_INCLUDE=../include
 CFLAGS+=-c -Wall -I$(ULFIUS_INCLUDE) -I$(EXAMPLE_INCLUDE) -D_REENTRANT $(ADDITIONALFLAGS) $(CPPFLAGS)
-LIBS=-lc -lorcania -lulfius -L$(ULFIUS_LOCATION)
+LIBS=u_example.o -lc -lorcania -lulfius -L$(ULFIUS_LOCATION)
 
-ifndef YDERFLAG
-LIBS+= -lyder
-endif
 
 all: test_u_map
 
@@ -38,8 +35,11 @@ debug: test_u_map
 test_u_map.o: test_u_map.c
 	$(CC) $(CFLAGS) test_u_map.c -DDEBUG -g -O0
 
-test_u_map: ../../src/libulfius.so test_u_map.o
+test_u_map: ../../src/libulfius.so test_u_map.o u_example.o
 	$(CC) -o test_u_map test_u_map.o $(LIBS)
 
 test: test_u_map
 	LD_LIBRARY_PATH=$(ULFIUS_LOCATION):${LD_LIBRARY_PATH} ./test_u_map
+
+u_example.o: ../u_example.c ../include/u_example.h
+	$(CC) $(CFLAGS) ../u_example.c -o $@

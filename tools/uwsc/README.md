@@ -20,7 +20,7 @@ Options available:
 
 ```shell
 -o --output-log-file=PATH
-	Print yder log messages in a file
+	Print Ulfius log messages in a file
 -x --add-header=HEADER
 	Add the specified header of the form 'key:value'
 -b --send-binary-file=PATH
@@ -68,3 +68,6 @@ $ uwsc -i http://localhost:9275/websocket
 $ # all messages will be fragmented with the maximum payload size specified
 $ uwsc --fragmentation=42 http://localhost:9275/websocket
 ```
+
+The log file uses timestamps and severity names. If the requested log file cannot
+be opened, uwsc reports the error and exits with status 1.

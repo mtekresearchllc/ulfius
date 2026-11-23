@@ -103,7 +103,7 @@ static size_t ulfius_write_body(void * contents, size_t size, size_t nmemb, void
   if (cur_size) {
     body_data->data = o_realloc(body_data->data, body_data->size + cur_size + 1);
     if(body_data->data == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for body_data->data");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for body_data->data");
       return 0;
     }
 
@@ -149,7 +149,7 @@ static size_t write_header(void * buffer, size_t size, size_t nitems, void * use
       } else {
         tmp = msprintf("%s, %s", u_map_get_case(response_header->response->map_header, key), value);
         if (u_map_remove_from_key_case(response_header->response->map_header, key) != U_OK || u_map_put(response_header->response->map_header, key, tmp)) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting header value for name %s", key);
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting header value for name %s", key);
         }
         o_free(tmp);
       }
@@ -162,7 +162,7 @@ static size_t write_header(void * buffer, size_t size, size_t nitems, void * use
     }
     response_header->response->protocol = o_strdup(header);
     if (response_header->response->protocol == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for response->protocol");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->protocol");
       return 0;
     }
   }
@@ -205,7 +205,7 @@ int ulfius_send_http_request(const struct _u_request * request, struct _u_respon
     if (body_data.data != NULL && body_data.size) {
       response->binary_body = o_malloc(body_data.size);
       if (response->binary_body == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for response->binary_body");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->binary_body");
         o_free(body_data.data);
         return U_ERROR_MEMORY;
       }
@@ -243,7 +243,7 @@ int ulfius_send_http_request_with_limit(const struct _u_request * request, struc
     if (body_data.data != NULL && body_data.size) {
       response->binary_body = o_malloc(body_data.size);
       if (response->binary_body == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for response->binary_body");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->binary_body");
         o_free(body_data.data);
         return U_ERROR_MEMORY;
       }
@@ -304,7 +304,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           // Set proxy if defined
           if (u_map_has_key_case(copy_request->map_header, U_ACCEPT_HEADER)) {
             if (curl_easy_setopt(curl_handle, CURLOPT_ACCEPT_ENCODING, u_map_get_case(copy_request->map_header, U_ACCEPT_HEADER)) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting accept encoding option");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting accept encoding option");
               ret = U_ERROR_LIBCURL;
               break;
             }
@@ -312,23 +312,23 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           // Set protocols to http and https only
 #if CURL_AT_LEAST_VERSION(7,85,0)
           if (curl_easy_setopt(curl_handle, CURLOPT_REDIR_PROTOCOLS_STR, "http,https") != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting curl redirection protocols");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting curl redirection protocols");
             ret = U_ERROR_LIBCURL;
             break;
           }
           if (curl_easy_setopt(curl_handle, CURLOPT_PROTOCOLS_STR, "http,https") != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting curl protocols");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting curl protocols");
             ret = U_ERROR_LIBCURL;
             break;
           }
 #else
           if (curl_easy_setopt(curl_handle, CURLOPT_REDIR_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS) != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting curl redirection protocols");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting curl redirection protocols");
             ret = U_ERROR_LIBCURL;
             break;
           }
           if (curl_easy_setopt(curl_handle, CURLOPT_PROTOCOLS, CURLPROTO_HTTP | CURLPROTO_HTTPS) != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting curl protocols");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting curl protocols");
             ret = U_ERROR_LIBCURL;
             break;
           }
@@ -339,12 +339,12 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
             if (curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_BASIC) == CURLE_OK) {
               if (curl_easy_setopt(curl_handle, CURLOPT_USERNAME, copy_request->auth_basic_user) != CURLE_OK ||
                   curl_easy_setopt(curl_handle, CURLOPT_PASSWORD, copy_request->auth_basic_password) != CURLE_OK) {
-                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting HTTP Basic user name or password");
+                ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting HTTP Basic user name or password");
                 ret = U_ERROR_LIBCURL;
                 break;
               }
             } else {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting HTTP Basic Auth option");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting HTTP Basic Auth option");
               ret = U_ERROR_LIBCURL;
               break;
             }
@@ -354,15 +354,15 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           // Set client certificate authentication if defined
           if (request->client_cert_file != NULL && request->client_key_file != NULL) {
             if (curl_easy_setopt(curl_handle, CURLOPT_SSLCERT, request->client_cert_file) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting client certificate file");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting client certificate file");
               ret = U_ERROR_LIBCURL;
               break;
             } else if (curl_easy_setopt(curl_handle, CURLOPT_SSLKEY, request->client_key_file) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting client key file");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting client key file");
               ret = U_ERROR_LIBCURL;
               break;
             } else if (request->client_key_password != NULL && curl_easy_setopt(curl_handle, CURLOPT_KEYPASSWD, request->client_key_password) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting client key password");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting client key password");
               ret = U_ERROR_LIBCURL;
               break;
             }
@@ -370,7 +370,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
 #endif
 
           if (curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 1L) != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting CURLOPT_NOPROGRESS option");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting CURLOPT_NOPROGRESS option");
             ret = U_ERROR_LIBCURL;
             break;
           }
@@ -378,7 +378,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           // Set proxy if defined
           if (copy_request->proxy != NULL) {
             if (curl_easy_setopt(curl_handle, CURLOPT_PROXY, copy_request->proxy) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting proxy option");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting proxy option");
               ret = U_ERROR_LIBCURL;
               break;
             }
@@ -387,7 +387,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           // follow redirection if set
           if (copy_request->follow_redirect) {
             if (curl_easy_setopt(curl_handle, CURLOPT_FOLLOWLOCATION, 1L) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting follow redirection option");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting follow redirection option");
               ret = U_ERROR_LIBCURL;
               break;
             }
@@ -397,19 +397,19 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           // Set network type
           if (copy_request->network_type & U_USE_ALL) {
             if (curl_easy_setopt(curl_handle, CURLOPT_IPRESOLVE, (long)CURL_IPRESOLVE_WHATEVER) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting IPRESOLVE WHATEVER option");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting IPRESOLVE WHATEVER option");
               ret = U_ERROR_LIBCURL;
               break;
             }
           } else if (copy_request->network_type & U_USE_IPV6) {
             if (curl_easy_setopt(curl_handle, CURLOPT_IPRESOLVE, (long)CURL_IPRESOLVE_V6) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting IPRESOLVE V6 option");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting IPRESOLVE V6 option");
               ret = U_ERROR_LIBCURL;
               break;
             }
           } else {
             if (curl_easy_setopt(curl_handle, CURLOPT_IPRESOLVE, (long)CURL_IPRESOLVE_V4) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting IPRESOLVE V4 option");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting IPRESOLVE V4 option");
               ret = U_ERROR_LIBCURL;
               break;
             }
@@ -439,7 +439,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
                     }
                     curl_free(value_esc);
                   } else {
-                    y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_escape for url parameter value %s=%s", keys[i], value);
+                    ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_escape for url parameter value %s=%s", keys[i], value);
                     exit_loop = 1;
                   }
                 } else {
@@ -452,7 +452,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
                 }
                 curl_free(key_esc);
               } else {
-                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_escape for url key %s", keys[i]);
+                ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_escape for url key %s", keys[i]);
                 exit_loop = 1;
               }
             }
@@ -484,7 +484,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
                     }
                     copy_request->binary_body_length = o_strlen((const char *)copy_request->binary_body);
                   } else {
-                    y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_escape for body parameter value %s=%s", keys[i], value);
+                    ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_escape for body parameter value %s=%s", keys[i], value);
                     exit_loop = 1;
                   }
                   o_free(value_esc);
@@ -497,7 +497,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
                   copy_request->binary_body_length = o_strlen((const char *)copy_request->binary_body);
                 }
               } else {
-                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_escape for body key %s", keys[i]);
+                ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_escape for body key %s", keys[i]);
                 exit_loop = 1;
               }
               o_free(key_esc);
@@ -509,7 +509,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
             }
 
             if (u_map_put(copy_request->map_header, ULFIUS_HTTP_HEADER_CONTENT, MHD_HTTP_POST_ENCODING_FORM_URLENCODED) != U_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting headr fields");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting headr fields");
               ret = U_ERROR_LIBCURL;
               break;
             }
@@ -519,20 +519,20 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           if (copy_request->binary_body_length && copy_request->binary_body != NULL) {
             if (copy_request->binary_body_length < 2147483648) {
               if (curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE, (long)copy_request->binary_body_length) != CURLE_OK) {
-                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting POST fields size");
+                ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting POST fields size");
                 ret = U_ERROR_LIBCURL;
                 break;
               }
             } else {
               if (curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDSIZE_LARGE, (curl_off_t)copy_request->binary_body_length) != CURLE_OK) {
-                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting POST fields size large");
+                ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting POST fields size large");
                 ret = U_ERROR_LIBCURL;
                 break;
               }
             }
 
             if (curl_easy_setopt(curl_handle, CURLOPT_POSTFIELDS, copy_request->binary_body) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting POST fields");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting POST fields");
               ret = U_ERROR_LIBCURL;
               break;
             }
@@ -548,14 +548,14 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
               if (value != NULL) {
                 header = msprintf("%s:%s", keys[i], value);
                 if ((header_list = curl_slist_append(header_list, header)) == NULL) {
-                  y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_slist_append for header_list (1)");
+                  ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_slist_append for header_list (1)");
                   exit_loop = 1;
                 }
                 o_free(header);
               } else {
                 header = msprintf("%s:", keys[i]);
                 if ((header_list = curl_slist_append(header_list, header)) == NULL) {
-                  y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_slist_append for header_list (2)");
+                  ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_slist_append for header_list (2)");
                   exit_loop = 1;
                 }
                 o_free(header);
@@ -587,7 +587,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
               o_free(cookie);
             }
             if (curl_easy_setopt(curl_handle, CURLOPT_COOKIE, cookies) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting cookie %s", cookie);
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting cookie %s", cookie);
               exit_loop = 1;
             }
             o_free(cookies);
@@ -601,21 +601,21 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           if (curl_easy_setopt(curl_handle, CURLOPT_URL, url) != CURLE_OK ||
               curl_easy_setopt(curl_handle, CURLOPT_CUSTOMREQUEST, copy_request->http_verb!=NULL?copy_request->http_verb:"GET") != CURLE_OK ||
               curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, header_list) != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl options (1)");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl options (1)");
             ret = U_ERROR_LIBCURL;
             break;
           }
 
           // Set CURLOPT_WRITEFUNCTION if specified
           if (write_body_function != NULL && curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, write_body_function) != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl options (2)");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl options (2)");
             ret = U_ERROR_LIBCURL;
             break;
           }
 
           // Set CURLOPT_WRITEDATA if specified
           if (write_body_data != NULL && curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, write_body_data) != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl options (3)");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl options (3)");
             ret = U_ERROR_LIBCURL;
             break;
           }
@@ -623,21 +623,21 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           // Disable server certificate validation if needed
           if (!copy_request->check_server_certificate) {
             if (curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L) != CURLE_OK || curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl options (4)");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl options (4)");
               ret = U_ERROR_LIBCURL;
               break;
             }
           } else {
             if (!(copy_request->check_server_certificate_flag & U_SSL_VERIFY_PEER)) {
               if (curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L) != CURLE_OK) {
-                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl options (5)");
+                ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl options (5)");
                 ret = U_ERROR_LIBCURL;
                 break;
               }
             }
             if (!(copy_request->check_server_certificate_flag & U_SSL_VERIFY_HOSTNAME)) {
               if (curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L) != CURLE_OK) {
-                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl options (6)");
+                ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl options (6)");
                 ret = U_ERROR_LIBCURL;
                 break;
               }
@@ -648,21 +648,21 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           // Disable proxy certificate validation if needed
           if (!copy_request->check_proxy_certificate) {
             if (curl_easy_setopt(curl_handle, CURLOPT_PROXY_SSL_VERIFYPEER, 0L) != CURLE_OK || curl_easy_setopt(curl_handle, CURLOPT_PROXY_SSL_VERIFYHOST, 0L) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl options (7)");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl options (7)");
               ret = U_ERROR_LIBCURL;
               break;
             }
           } else {
             if (!(copy_request->check_proxy_certificate_flag & U_SSL_VERIFY_PEER)) {
               if (curl_easy_setopt(curl_handle, CURLOPT_PROXY_SSL_VERIFYPEER, 0L) != CURLE_OK) {
-                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl options (8)");
+                ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl options (8)");
                 ret = U_ERROR_LIBCURL;
                 break;
               }
             }
             if (!(copy_request->check_proxy_certificate_flag & U_SSL_VERIFY_HOSTNAME)) {
               if (curl_easy_setopt(curl_handle, CURLOPT_PROXY_SSL_VERIFYHOST, 0L) != CURLE_OK) {
-                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl options (9)");
+                ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl options (9)");
                 ret = U_ERROR_LIBCURL;
                 break;
               }
@@ -673,7 +673,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           // Set request ca_path value
           if (copy_request->ca_path) {
             if (curl_easy_setopt(curl_handle, CURLOPT_CAPATH, copy_request->ca_path) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl options (10)");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl options (10)");
               ret = U_ERROR_LIBCURL;
               break;
             }
@@ -682,7 +682,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           // Set request timeout value
           if (copy_request->timeout) {
             if (curl_easy_setopt(curl_handle, CURLOPT_TIMEOUT, copy_request->timeout) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl options (10)");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl options (10)");
               ret = U_ERROR_LIBCURL;
               break;
             }
@@ -695,7 +695,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
               u_response_header.max_header = max_header;
               if (curl_easy_setopt(curl_handle, CURLOPT_HEADERFUNCTION, write_header) != CURLE_OK ||
                   curl_easy_setopt(curl_handle, CURLOPT_WRITEHEADER, &u_response_header) != CURLE_OK) {
-                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting headers");
+                ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting headers");
                 ret = U_ERROR_LIBCURL;
                 break;
               }
@@ -703,26 +703,26 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
           }
 
           if (curl_easy_setopt(curl_handle, CURLOPT_NOSIGNAL, 1L) != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl CURLOPT_NOSIGNAL");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl CURLOPT_NOSIGNAL");
             ret = U_ERROR_LIBCURL;
             break;
           }
 
           if (curl_easy_setopt(curl_handle, CURLOPT_COOKIEFILE, "") != CURLE_OK) { // Apparently you have to do that to tell libcurl you'll need cookies afterwards
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error setting libcurl CURLOPT_COOKIEFILE");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error setting libcurl CURLOPT_COOKIEFILE");
             ret = U_ERROR_LIBCURL;
             break;
           }
 
           res = curl_easy_perform(curl_handle);
           if (res != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_perform");
-            y_log_message(Y_LOG_LEVEL_DEBUG, "Ulfius - libcurl error: %d, error message '%s'", res, curl_easy_strerror(res));
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_perform");
+            ulfius_log_message(ULFIUS_LOG_DEBUG, "Ulfius - libcurl error: %d, error message '%s'", res, curl_easy_strerror(res));
             ret = U_ERROR_LIBCURL;
             break;
           } else if (res == CURLE_OK && response != NULL) {
             if (curl_easy_getinfo (curl_handle, CURLINFO_RESPONSE_CODE, &response->status) != CURLE_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error executing http request, libcurl error: %d, error message '%s'", res, curl_easy_strerror(res));
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error executing http request, libcurl error: %d, error message '%s'", res, curl_easy_strerror(res));
               ret = U_ERROR_LIBCURL;
               break;
             }
@@ -767,7 +767,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
                     counter++;
                   }
                   if (ulfius_add_cookie_to_response(response, key, value, expires, 0, domain, path, secure, http_only) != U_OK) {
-                    y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error adding cookie %s/%s to response", key, value);
+                    ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error adding cookie %s/%s to response", key, value);
                   }
                   o_free(key);
                   o_free(value);
@@ -779,7 +779,7 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
                 nc = nc->next;
               }
             } else {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error executing http request, libcurl error: %d, error message %s", res, curl_easy_strerror(res));
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error executing http request, libcurl error: %d, error message %s", res, curl_easy_strerror(res));
               ret = U_ERROR_LIBCURL;
             }
             curl_slist_free_all(cookies_list);
@@ -787,14 +787,14 @@ int ulfius_send_http_streaming_request_max_header(const struct _u_request * requ
         } while (0);
         o_free(url);
       } else {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_init");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_init");
         ret = U_ERROR_LIBCURL;
       }
       ulfius_clean_request_full(copy_request);
       curl_easy_cleanup(curl_handle);
       curl_slist_free_all(header_list);
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error ulfius_duplicate_request");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error ulfius_duplicate_request");
       ret = U_ERROR_MEMORY;
     }
   } else {
@@ -862,20 +862,20 @@ int ulfius_send_smtp_rich_email(const char * host,
         }
         smtp_url = msprintf("smtp%s://%s:%d", use_tls?"s":"", host, cur_port);
         if (smtp_url == NULL) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for smtp_url");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for smtp_url");
           ret = U_ERROR_MEMORY;
           break;
         }
 
         if (curl_easy_setopt(curl_handle, CURLOPT_URL, smtp_url) != CURLE_OK) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_setopt for smtp_url");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_setopt for smtp_url");
           ret = U_ERROR_LIBCURL;
           break;
         }
 
         if (use_tls) {
           if (curl_easy_setopt(curl_handle, CURLOPT_USE_SSL, (long)CURLUSESSL_ALL) != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_USE_SSL");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_USE_SSL");
             ret = U_ERROR_LIBCURL;
             break;
           }
@@ -883,12 +883,12 @@ int ulfius_send_smtp_rich_email(const char * host,
 
         if (use_tls && !verify_certificate) {
           if (curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYPEER, 0L) != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_SSL_VERIFYPEER");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_SSL_VERIFYPEER");
             ret = U_ERROR_LIBCURL;
             break;
           }
           if (curl_easy_setopt(curl_handle, CURLOPT_SSL_VERIFYHOST, 0L) != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_SSL_VERIFYHOST");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_SSL_VERIFYHOST");
             ret = U_ERROR_LIBCURL;
             break;
           }
@@ -896,44 +896,44 @@ int ulfius_send_smtp_rich_email(const char * host,
 
         if (user != NULL && password != NULL) {
           if (curl_easy_setopt(curl_handle, CURLOPT_USERNAME, user) != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_USERNAME");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_USERNAME");
             ret = U_ERROR_LIBCURL;
             break;
           }
           if (curl_easy_setopt(curl_handle, CURLOPT_PASSWORD, password) != CURLE_OK) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_PASSWORD");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_PASSWORD");
             ret = U_ERROR_LIBCURL;
             break;
           }
         }
 
         if (curl_easy_setopt(curl_handle, CURLOPT_MAIL_FROM, from) != CURLE_OK) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_MAIL_FROM");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_MAIL_FROM");
           ret = U_ERROR_LIBCURL;
           break;
         }
 
         if ((recipients = curl_slist_append(recipients, to)) == NULL) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_slist_append for recipients to");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_slist_append for recipients to");
           ret = U_ERROR_LIBCURL;
           break;
         }
         if (cc != NULL) {
           if ((recipients = curl_slist_append(recipients, cc)) == NULL) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_slist_append for recipients cc");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_slist_append for recipients cc");
             ret = U_ERROR_LIBCURL;
             break;
           }
         }
         if (bcc != NULL) {
           if ((recipients = curl_slist_append(recipients, bcc)) == NULL) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_slist_append for recipients bcc");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_slist_append for recipients bcc");
             ret = U_ERROR_LIBCURL;
             break;
           }
         }
         if (curl_easy_setopt(curl_handle, CURLOPT_MAIL_RCPT, recipients) != CURLE_OK) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_MAIL_RCPT");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_MAIL_RCPT");
           ret = U_ERROR_LIBCURL;
           break;
         }
@@ -964,29 +964,29 @@ int ulfius_send_smtp_rich_email(const char * host,
                                    content_type,
                                    mail_body);
         if (upload_ctx.data == NULL) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating resource for upload_ctx.data");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating resource for upload_ctx.data");
           ret = U_ERROR_MEMORY;
           break;
         }
         upload_ctx.len = o_strlen(upload_ctx.data);
         if (curl_easy_setopt(curl_handle, CURLOPT_READFUNCTION, smtp_payload_source) != CURLE_OK) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_READFUNCTION");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_READFUNCTION");
           ret = U_ERROR_LIBCURL;
           break;
         }
         if (curl_easy_setopt(curl_handle, CURLOPT_READDATA, &upload_ctx) != CURLE_OK) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_READDATA");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_READDATA");
           ret = U_ERROR_LIBCURL;
           break;
         }
         if (curl_easy_setopt(curl_handle, CURLOPT_UPLOAD, 1L) != CURLE_OK) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_UPLOAD");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error curl_easy_setopt for CURLOPT_UPLOAD");
           ret = U_ERROR_LIBCURL;
           break;
         }
 
         if ((res = curl_easy_perform(curl_handle)) != CURLE_OK) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error sending smtp message, error message '%s'", curl_easy_strerror(res));
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error sending smtp message, error message '%s'", curl_easy_strerror(res));
           ret = U_ERROR_LIBCURL;
           break;
         }
@@ -998,11 +998,11 @@ int ulfius_send_smtp_rich_email(const char * host,
       o_free(cc_str);
       o_free(upload_ctx.data);
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error executing curl_easy_init");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error executing curl_easy_init");
       ret = U_ERROR_LIBCURL;
     }
   } else {
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Ulfius - invalid required smtp parameters");
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "Ulfius - invalid required smtp parameters");
     ret = U_ERROR_PARAMS;
   }
   return ret;

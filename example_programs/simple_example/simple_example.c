@@ -105,10 +105,11 @@ int main (int argc, char **argv) {
   // Set the framework port number
   struct _u_instance instance;
   
-  y_init_logs("simple_example", Y_LOG_MODE_CONSOLE, Y_LOG_LEVEL_DEBUG, NULL, "Starting simple_example");
+  ulfius_set_log_callback(ULFIUS_LOG_DEBUG, u_example_log_callback, stdout);
+  ulfius_log_message(ULFIUS_LOG_INFO, "%s", "Starting simple_example");
   
   if (ulfius_init_instance(&instance, PORT, NULL, NULL) != U_OK) {
-    y_log_message(Y_LOG_LEVEL_ERROR, "Error ulfius_init_instance, abort");
+    ulfius_log_message(ULFIUS_LOG_ERROR, "Error ulfius_init_instance, abort");
     return(1);
   }
   
@@ -144,16 +145,16 @@ int main (int argc, char **argv) {
   }
   
   if (ret == U_OK) {
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Start %sframework on port %d", ((argc == 4 && o_strcmp("-secure", argv[1]) == 0)?"secure ":""), instance.port);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "Start %sframework on port %d", ((argc == 4 && o_strcmp("-secure", argv[1]) == 0)?"secure ":""), instance.port);
     
     // Wait for the user to press <enter> on the console to quit the application
     getchar();
   } else {
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Error starting framework");
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "Error starting framework");
   }
-  y_log_message(Y_LOG_LEVEL_DEBUG, "End framework");
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "End framework");
   
-  y_close_logs();
+  ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL);
   
   ulfius_stop_framework(&instance);
   ulfius_clean_instance(&instance);

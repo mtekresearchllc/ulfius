@@ -36,14 +36,14 @@ int u_map_init(struct _u_map * u_map) {
     u_map->lengths = NULL;
     u_map->keys = o_malloc(sizeof(char *));
     if (u_map->keys == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for u_map->keys");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->keys");
       return U_ERROR_MEMORY;
     }
     u_map->keys[0] = NULL;
 
     u_map->values = o_malloc(sizeof(char *));
     if (u_map->values == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for u_map->values");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->values");
       o_free(u_map->keys);
       u_map->keys = NULL;
       return U_ERROR_MEMORY;
@@ -52,7 +52,7 @@ int u_map_init(struct _u_map * u_map) {
 
     u_map->lengths = o_malloc(sizeof(size_t));
     if (u_map->lengths == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for u_map->lengths");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->lengths");
       o_free(u_map->keys);
       o_free(u_map->values);
       u_map->keys = NULL;
@@ -163,7 +163,7 @@ int u_map_put_binary(struct _u_map * u_map, const char * key, const char * value
         if (u_map->lengths[i] < (offset + length)) {
           u_map->values[i] = o_realloc(u_map->values[i], (size_t)(offset + length + 1));
           if (u_map->values[i] == NULL) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for u_map->values");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->values");
             return U_ERROR_MEMORY;
           }
         }
@@ -185,13 +185,13 @@ int u_map_put_binary(struct _u_map * u_map, const char * key, const char * value
       // Not found, add key/value
       dup_key = o_strdup(key);
       if (dup_key == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for dup_key");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for dup_key");
         return U_ERROR_MEMORY;
       }
       if (value != NULL) {
         dup_value = o_malloc((size_t)(offset + length + 1));
         if (dup_value == NULL) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for dup_value");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for dup_value");
           o_free(dup_key);
           return U_ERROR_MEMORY;
         }
@@ -205,7 +205,7 @@ int u_map_put_binary(struct _u_map * u_map, const char * key, const char * value
       for (i = 0; u_map->keys[i] != NULL; i++);
       u_map->keys = o_realloc(u_map->keys, (i + 2)*sizeof(char *));
       if (u_map->keys == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for u_map->keys");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->keys");
         o_free(dup_key);
         o_free(dup_value);
         return U_ERROR_MEMORY;
@@ -216,7 +216,7 @@ int u_map_put_binary(struct _u_map * u_map, const char * key, const char * value
       // Append value
       u_map->values = o_realloc(u_map->values, (i + 2)*sizeof(char *));
       if (u_map->values == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for u_map->values");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->values");
         o_free(dup_key);
         o_free(dup_value);
         return U_ERROR_MEMORY;
@@ -227,7 +227,7 @@ int u_map_put_binary(struct _u_map * u_map, const char * key, const char * value
       // Append length
       u_map->lengths = o_realloc(u_map->lengths, (i + 2)*sizeof(size_t));
       if (u_map->lengths == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for u_map->lengths");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->lengths");
         o_free(dup_key);
         o_free(dup_value);
         return U_ERROR_MEMORY;
@@ -355,17 +355,17 @@ int u_map_remove_at(struct _u_map * u_map, const int index) {
     }
     u_map->keys = o_realloc(u_map->keys, (((size_t)u_map->nb_values)*sizeof(char *)));
     if (u_map->keys == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for u_map->keys");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->keys");
       return U_ERROR_MEMORY;
     }
     u_map->values = o_realloc(u_map->values, (((size_t)u_map->nb_values)*sizeof(char *)));
     if (u_map->values == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for u_map->values");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->values");
       return U_ERROR_MEMORY;
     }
     u_map->lengths = o_realloc(u_map->lengths, (((size_t)u_map->nb_values)*sizeof(char *)));
     if (u_map->lengths == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for u_map->lengths");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map->lengths");
       return U_ERROR_MEMORY;
     }
 
@@ -465,19 +465,19 @@ struct _u_map * u_map_copy(const struct _u_map * source) {
   if (source != NULL) {
     copy = o_malloc(sizeof(struct _u_map));
     if (copy == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for u_map_copy.copy");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for u_map_copy.copy");
       return NULL;
     }
     if (u_map_init(copy) != U_OK) {
       o_free(copy);
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error u_map_init for u_map_copy.copy");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error u_map_init for u_map_copy.copy");
       return NULL;
     }
     keys = u_map_enum_keys(source);
     for (i=0; keys != NULL && keys[i] != NULL; i++) {
       value = u_map_get(source, keys[i]);
       if (u_map_put_binary(copy, keys[i], value, 0, source->lengths[i]) != U_OK) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error u_map_put_binary for u_map_copy.copy");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error u_map_put_binary for u_map_copy.copy");
         u_map_clean_full(copy);
         return NULL;
       }

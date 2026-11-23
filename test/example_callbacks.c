@@ -1,4 +1,5 @@
 /* Public domain, no copyright. Use at your own risk. */
+#include "u_example.h"
 
 #include <check.h>
 #include <ctype.h>
@@ -2498,7 +2499,8 @@ int main(void)
   int number_failed;
   Suite *s;
   SRunner *sr;
-  y_init_logs("Ulfius", Y_LOG_MODE_CONSOLE, Y_LOG_LEVEL_DEBUG, NULL, "Starting Ulfius example callbacks tests");
+  ulfius_set_log_callback(ULFIUS_LOG_DEBUG, u_example_log_callback, stdout);
+  ulfius_log_message(ULFIUS_LOG_INFO, "%s", "Starting Ulfius example callbacks tests");
   ulfius_global_init();
   s = ulfius_suite();
   sr = srunner_create(s);
@@ -2509,6 +2511,6 @@ int main(void)
 
   ulfius_global_close();
 
-  y_close_logs();
+  ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL);
   return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

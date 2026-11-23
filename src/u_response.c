@@ -34,7 +34,7 @@ static char * ulfius_generate_cookie_header(const struct _u_cookie * cookie) {
     if (cookie->expires != NULL) {
       attr_expires = msprintf("; %s=%s", ULFIUS_COOKIE_ATTRIBUTE_EXPIRES, cookie->expires);
       if (attr_expires == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for attr_expires");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for attr_expires");
         return NULL;
       }
     } else {
@@ -43,7 +43,7 @@ static char * ulfius_generate_cookie_header(const struct _u_cookie * cookie) {
     if (cookie->max_age > 0) {
       attr_max_age = msprintf("; %s=%d", ULFIUS_COOKIE_ATTRIBUTE_MAX_AGE, cookie->max_age);
       if (attr_max_age == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for attr_max_age");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for attr_max_age");
         o_free(attr_expires);
         attr_expires = NULL;
         return NULL;
@@ -54,7 +54,7 @@ static char * ulfius_generate_cookie_header(const struct _u_cookie * cookie) {
     if (cookie->domain != NULL) {
       attr_domain = msprintf("; %s=%s", ULFIUS_COOKIE_ATTRIBUTE_DOMAIN, cookie->domain);
       if (attr_domain == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for attr_domain");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for attr_domain");
         o_free(attr_expires);
         attr_expires = NULL;
         o_free(attr_max_age);
@@ -67,7 +67,7 @@ static char * ulfius_generate_cookie_header(const struct _u_cookie * cookie) {
     if (cookie->path != NULL) {
       attr_path = msprintf("; %s=%s", ULFIUS_COOKIE_ATTRIBUTE_PATH, cookie->path);
       if (attr_path == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for attr_path");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for attr_path");
         o_free(attr_expires);
         o_free(attr_max_age);
         o_free(attr_domain);
@@ -82,7 +82,7 @@ static char * ulfius_generate_cookie_header(const struct _u_cookie * cookie) {
     if (cookie->secure) {
       attr_secure = msprintf("; %s", ULFIUS_COOKIE_ATTRIBUTE_SECURE);
       if (attr_secure == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for attr_secure");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for attr_secure");
         o_free(attr_expires);
         o_free(attr_max_age);
         o_free(attr_domain);
@@ -99,7 +99,7 @@ static char * ulfius_generate_cookie_header(const struct _u_cookie * cookie) {
     if (cookie->http_only) {
       attr_http_only = msprintf("; %s", ULFIUS_COOKIE_ATTRIBUTE_HTTPONLY);
       if (attr_http_only == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for attr_http_only");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for attr_http_only");
         o_free(attr_expires);
         o_free(attr_max_age);
         o_free(attr_domain);
@@ -125,11 +125,11 @@ static char * ulfius_generate_cookie_header(const struct _u_cookie * cookie) {
     }
 
     if (attr_expires == NULL || attr_max_age == NULL || attr_domain == NULL || attr_path == NULL || attr_secure == NULL || attr_http_only == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for ulfius_generate_cookie_header");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for ulfius_generate_cookie_header");
     } else {
       cookie_header_value = msprintf("%s=%s%s%s%s%s%s%s%s", cookie->key, cookie->value, attr_expires, attr_max_age, attr_domain, attr_path, attr_secure, attr_http_only, same_site);
       if (cookie_header_value == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for cookie_header_value");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for cookie_header_value");
       }
     }
     o_free(attr_expires);
@@ -249,13 +249,13 @@ int ulfius_add_same_site_cookie_to_response(struct _u_response * response, const
     if (response->nb_cookies == 0) {
       response->map_cookie = o_malloc(sizeof(struct _u_cookie));
       if (response->map_cookie == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for response->map_cookie");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->map_cookie");
         return U_ERROR_MEMORY;
       }
     } else {
       response->map_cookie = o_realloc(response->map_cookie, (response->nb_cookies + 1) * sizeof(struct _u_cookie));
       if (response->map_cookie == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for response->map_cookie");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->map_cookie");
         return U_ERROR_MEMORY;
       }
     }
@@ -271,7 +271,7 @@ int ulfius_add_same_site_cookie_to_response(struct _u_response * response, const
     if ((key != NULL && response->map_cookie[response->nb_cookies].key == NULL) || (value != NULL && response->map_cookie[response->nb_cookies].value == NULL) ||
         (expires != NULL && response->map_cookie[response->nb_cookies].expires == NULL) || (domain != NULL && response->map_cookie[response->nb_cookies].domain == NULL) ||
         (path != NULL && response->map_cookie[response->nb_cookies].path == NULL)) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for ulfius_add_cookie_to_response");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for ulfius_add_cookie_to_response");
       ulfius_clean_cookie(&response->map_cookie[response->nb_cookies]);
       o_free(response->map_cookie[response->nb_cookies].key);
       o_free(response->map_cookie[response->nb_cookies].value);
@@ -317,7 +317,7 @@ int ulfius_copy_cookie(struct _u_cookie * dest, const struct _u_cookie * source)
     dest->http_only = source->http_only;
     dest->same_site = source->same_site;
     if (dest->path == NULL || dest->domain == NULL || dest->expires == NULL || dest->value == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for ulfius_copy_cookie");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for ulfius_copy_cookie");
       o_free(dest->path);
       o_free(dest->domain);
       o_free(dest->expires);
@@ -376,7 +376,7 @@ int ulfius_init_response(struct _u_response * response) {
     response->status = 200;
     response->map_header = o_malloc(sizeof(struct _u_map));
     if (response->map_header == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for response->map_header");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->map_header");
       return U_ERROR_MEMORY;
     }
     if (u_map_init(response->map_header) != U_OK) {
@@ -399,7 +399,7 @@ int ulfius_init_response(struct _u_response * response) {
 #ifndef U_DISABLE_WEBSOCKET
     response->websocket_handle = o_malloc(sizeof(struct _websocket_handle));
     if (response->websocket_handle == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for response->websocket_handle");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->websocket_handle");
       return U_ERROR_MEMORY;
     }
     ((struct _websocket_handle *)response->websocket_handle)->websocket_protocol = NULL;
@@ -413,7 +413,7 @@ int ulfius_init_response(struct _u_response * response) {
     ((struct _websocket_handle *)response->websocket_handle)->rsv_expected = 0;
     if ((((struct _websocket_handle *)response->websocket_handle)->websocket_extension_list = o_malloc(sizeof(struct _pointer_list))) == NULL) {
       o_free(response->websocket_handle);
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for response->websocket_handle->websocket_extension_list");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->websocket_handle->websocket_extension_list");
       return U_ERROR_MEMORY;
     }
     pointer_list_init(((struct _websocket_handle *)response->websocket_handle)->websocket_extension_list);
@@ -431,7 +431,7 @@ int ulfius_copy_response(struct _u_response * dest, const struct _u_response * s
     dest->protocol = o_strdup(source->protocol);
     dest->auth_realm = o_strdup(source->auth_realm);
     if (dest->protocol == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for dest->protocol");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for dest->protocol");
       return U_ERROR_MEMORY;
     }
     u_map_clean_full(dest->map_header);
@@ -443,7 +443,7 @@ int ulfius_copy_response(struct _u_response * dest, const struct _u_response * s
     if (source->nb_cookies > 0) {
       dest->map_cookie = o_malloc(source->nb_cookies*sizeof(struct _u_cookie));
       if (dest->map_cookie == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for dest->map_cookie");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for dest->map_cookie");
         return U_ERROR_MEMORY;
       }
       for (i=0; i<source->nb_cookies; i++) {
@@ -456,7 +456,7 @@ int ulfius_copy_response(struct _u_response * dest, const struct _u_response * s
     if (source->binary_body != NULL && source->binary_body_length) {
       dest->binary_body = o_malloc(source->binary_body_length);
       if (dest->binary_body == NULL) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for dest->binary_body");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for dest->binary_body");
         return U_ERROR_MEMORY;
       }
       dest->binary_body_length = source->binary_body_length;
@@ -496,17 +496,17 @@ struct _u_response * ulfius_duplicate_response(const struct _u_response * respon
   if (response != NULL) {
     new_response = o_malloc(sizeof(struct _u_response));
     if (new_response == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for new_response");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for new_response");
       return NULL;
     }
     if (ulfius_init_response(new_response) == U_OK) {
       if (ulfius_copy_response(new_response, response) != U_OK) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error ulfius_copy_response");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error ulfius_copy_response");
         ulfius_clean_response_full(new_response);
         new_response = NULL;
       }
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error ulfius_init_response");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error ulfius_init_response");
       o_free(new_response);
       new_response = NULL;
     }
@@ -520,7 +520,7 @@ int ulfius_set_string_body_response(struct _u_response * response, const unsigne
     o_free(response->binary_body);
     response->binary_body = (unsigned char *)o_strdup(string_body);
     if (response->binary_body == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for response->binary_body");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->binary_body");
       return U_ERROR_MEMORY;
     } else {
       response->status = (long int)status;
@@ -541,7 +541,7 @@ int ulfius_set_binary_body_response(struct _u_response * response, const unsigne
 
     response->binary_body = o_malloc(length);
     if (response->binary_body == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for response->binary_body");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->binary_body");
       return U_ERROR_MEMORY;
     }
     memcpy(response->binary_body, binary_body, length);
@@ -655,7 +655,7 @@ int ulfius_set_response_properties(struct _u_response * response, ...) {
     }
     va_end(vl);
   } else {
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Ulfius - Error input parameter");
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "Ulfius - Error input parameter");
     ret = U_ERROR_PARAMS;
   }
   return ret;
@@ -689,7 +689,7 @@ int ulfius_set_json_body_response(struct _u_response * response, const unsigned 
 
     response->binary_body = (void*) json_dumps(j_body, JSON_COMPACT);
     if (response->binary_body == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for response->binary_body");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for response->binary_body");
       return U_ERROR_MEMORY;
     }
     response->binary_body_length = o_strlen((char*)response->binary_body);

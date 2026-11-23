@@ -17,11 +17,8 @@ ULFIUS_LOCATION=../../src
 ULFIUS_INCLUDE=../../include
 EXAMPLE_INCLUDE=../include
 CFLAGS+=-c -Wall -I$(ULFIUS_INCLUDE) -I$(EXAMPLE_INCLUDE) -D_REENTRANT $(ADDITIONALFLAGS) $(CPPFLAGS)
-LIBS=-lc -lulfius -ljansson -L$(ULFIUS_LOCATION)
+LIBS=u_example.o -lc -lulfius -ljansson -L$(ULFIUS_LOCATION)
 
-ifndef YDERFLAG
-LIBS+= -lyder
-endif
 
 all: injection_example
 
@@ -38,8 +35,11 @@ debug: injection_example
 injection_example.o: injection_example.c
 	$(CC) $(CFLAGS) injection_example.c -DDEBUG -g -O0
 
-injection_example: ../../src/libulfius.so injection_example.o
+injection_example: ../../src/libulfius.so injection_example.o u_example.o
 	$(CC) -o injection_example injection_example.o $(LIBS)
 
 test: injection_example
 	LD_LIBRARY_PATH=$(ULFIUS_LOCATION):${LD_LIBRARY_PATH} ./injection_example
+
+u_example.o: ../u_example.c ../include/u_example.h
+	$(CC) $(CFLAGS) ../u_example.c -o $@

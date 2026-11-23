@@ -1,5 +1,10 @@
 # Ulfius HTTP Framework
 
+The development branch contains the unreleased 3.0.0 logging API change.
+Applications must migrate Yder log registration to Ulfius callbacks; see
+[Application logging](API.md#application-logging). Use the published 2.7 release
+for existing deployments until the major release is finalized.
+
 This repository is the MTEK Research continuation of Ulfius, a C HTTP and
 WebSocket framework. Contributions and bug reports are welcome through this
 repository's [issues](https://github.com/mtekresearchllc/ulfius/issues) and

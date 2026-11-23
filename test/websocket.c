@@ -316,9 +316,9 @@ void websocket_extension_callback_client (const struct _u_request * request, str
   UNUSED(request);
   UNUSED(websocket_manager_user_data);
   ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_CLIENT), MESSAGE_CLIENT), U_OK);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "client message 1 '%s' sent", MESSAGE_CLIENT);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "client message 1 '%s' sent", MESSAGE_CLIENT);
   ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_CLIENT), MESSAGE_CLIENT), U_OK);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "client message 2 '%s' sent", MESSAGE_CLIENT);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "client message 2 '%s' sent", MESSAGE_CLIENT);
   if (ulfius_websocket_wait_close(websocket_manager, 50) == U_WEBSOCKET_STATUS_OPEN) {
     ck_assert_int_eq(ulfius_websocket_send_close_signal(websocket_manager), U_OK);
   }
@@ -417,7 +417,7 @@ void websocket_incoming_message_with_origin_callback_client (const struct _u_req
 void websocket_manager_extension_callback (const struct _u_request * request, struct _websocket_manager * websocket_manager, void * websocket_manager_user_data) {
   UNUSED(request);
   UNUSED(websocket_manager_user_data);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "server message '%s' sent", MESSAGE_SERVER);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "server message '%s' sent", MESSAGE_SERVER);
   ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_SERVER), MESSAGE_SERVER), U_OK);
   while (ulfius_websocket_wait_close(websocket_manager, 50) == U_WEBSOCKET_STATUS_OPEN);
 }
@@ -426,9 +426,9 @@ void websocket_manager_extension_deflate_callback (const struct _u_request * req
   UNUSED(request);
   UNUSED(websocket_manager_user_data);
   ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_SERVER), MESSAGE_SERVER), U_OK);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "server message 1 sent");
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "server message 1 sent");
   ck_assert_int_eq(ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(MESSAGE_SERVER), MESSAGE_SERVER), U_OK);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "server message 2 sent");
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "server message 2 sent");
   while (ulfius_websocket_wait_close(websocket_manager, 50) == U_WEBSOCKET_STATUS_OPEN);
 }
 
@@ -567,7 +567,7 @@ int websocket_extension1_message_out_perform(const uint8_t opcode, const uint64_
   *data_out = msprintf("%.*s%s", (int)data_len_in, data_in, MESSAGE_EXT1);
   ck_assert_ptr_ne(*data_out, NULL);
   *data_len_out = o_strlen(*data_out);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "inside websocket_extension1_message_out_perform");
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "inside websocket_extension1_message_out_perform");
   return U_OK;
 }
 
@@ -582,7 +582,7 @@ int websocket_extension1_message_in_perform(const uint8_t opcode, const uint64_t
   }
   *data_out = msprintf("%.*s%s", (int)data_len_in, data_in, MESSAGE_EXT1);
   *data_len_out = o_strlen(*data_out);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "inside websocket_extension1_message_in_perform: '%.*s'", (int)data_len_in, data_in);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "inside websocket_extension1_message_in_perform: '%.*s'", (int)data_len_in, data_in);
   return U_OK;
 }
 
@@ -597,7 +597,7 @@ int websocket_extension2_message_out_perform(const uint8_t opcode, const uint64_
   }
   *data_out = msprintf("%.*s%s", (int)data_len_in, data_in, MESSAGE_EXT2);
   *data_len_out = o_strlen(*data_out);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "inside websocket_extension2_message_out_perform");
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "inside websocket_extension2_message_out_perform");
   return U_OK;
 }
 
@@ -612,7 +612,7 @@ int websocket_extension2_message_in_perform(const uint8_t opcode, const uint64_t
   }
   *data_out = msprintf("%.*s%s", (int)data_len_in, data_in, MESSAGE_EXT2);
   *data_len_out = o_strlen(*data_out);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "inside websocket_extension2_message_in_perform");
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "inside websocket_extension2_message_in_perform");
   return U_OK;
 }
 
@@ -757,7 +757,7 @@ int callback_websocket_extension_no_match (const struct _u_request * request, st
 
 void websocket_extension_match_free_context(void * user_data, void * context) {
   UNUSED(user_data);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "inside websocket_extension_match_free_context");
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "inside websocket_extension_match_free_context");
   ck_assert_ptr_ne(context, NULL);
   o_free(context);
 }
@@ -765,7 +765,7 @@ void websocket_extension_match_free_context(void * user_data, void * context) {
 int websocket_extension_server_match_ext1(const char * extension_server, const char ** extension_client_list, char ** extension_client, void * user_data, void ** context) {
   UNUSED(extension_client_list);
   UNUSED(user_data);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "check match server extension "MESSAGE_EXT1" with extension '%s'", extension_server);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "check match server extension "MESSAGE_EXT1" with extension '%s'", extension_server);
   if (0 == o_strncmp(extension_server, MESSAGE_EXT1, o_strlen(MESSAGE_EXT1))) {
     *extension_client = o_strdup(MESSAGE_EXT1);
     *context = o_strdup("context for " MESSAGE_EXT1);
@@ -778,7 +778,7 @@ int websocket_extension_server_match_ext1(const char * extension_server, const c
 int websocket_extension_server_match_ext2(const char * extension_server, const char ** extension_client_list, char ** extension_client, void * user_data, void ** context) {
   UNUSED(extension_client_list);
   UNUSED(user_data);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "check match server extension "MESSAGE_EXT2" with extension '%s'", extension_server);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "check match server extension "MESSAGE_EXT2" with extension '%s'", extension_server);
   if (0 == o_strncmp(extension_server, MESSAGE_EXT2, o_strlen(MESSAGE_EXT2))) {
     *extension_client = o_strdup(MESSAGE_EXT2);
     *context = o_strdup("context for " MESSAGE_EXT1);
@@ -790,7 +790,7 @@ int websocket_extension_server_match_ext2(const char * extension_server, const c
 
 int websocket_extension_client_match_ext1(const char * extension_server, void * user_data, void ** context) {
   UNUSED(user_data);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "check match client extension "MESSAGE_EXT1" with extension '%s'", extension_server);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "check match client extension "MESSAGE_EXT1" with extension '%s'", extension_server);
   if (0 == o_strncmp(extension_server, MESSAGE_EXT1, o_strlen(MESSAGE_EXT1))) {
     *context = o_strdup("context for " MESSAGE_EXT1);
     return U_OK;
@@ -801,7 +801,7 @@ int websocket_extension_client_match_ext1(const char * extension_server, void * 
 
 int websocket_extension_client_match_ext2(const char * extension_server, void * user_data, void ** context) {
   UNUSED(user_data);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "check match client extension "MESSAGE_EXT2" with extension '%s'", extension_server);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "check match client extension "MESSAGE_EXT2" with extension '%s'", extension_server);
   if (0 == o_strncmp(extension_server, MESSAGE_EXT2, o_strlen(MESSAGE_EXT2))) {
     *context = o_strdup("context for " MESSAGE_EXT2);
     return U_OK;
@@ -853,13 +853,13 @@ int websocket_extension_message_out_deflate_test(const uint8_t opcode,
             case Z_BUF_ERROR:
               break;
             default:
-              y_log_message(Y_LOG_LEVEL_ERROR, "websocket_extension_message_out_deflate - Error deflate");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "websocket_extension_message_out_deflate - Error deflate");
               ret = U_ERROR;
               break;
           }
           (*data_len_out) += _U_W_BUFF_LEN - deflate_context->defstream.avail_out;
         } else {
-          y_log_message(Y_LOG_LEVEL_ERROR, "websocket_extension_message_out_deflate - Error allocating resources for data_in_suffix");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "websocket_extension_message_out_deflate - Error allocating resources for data_in_suffix");
           ret = U_ERROR;
         }
       } while (U_OK == ret && deflate_context->defstream.avail_out == 0);
@@ -875,13 +875,13 @@ int websocket_extension_message_out_deflate_test(const uint8_t opcode,
             case Z_BUF_ERROR:
               break;
             default:
-              y_log_message(Y_LOG_LEVEL_ERROR, "websocket_extension_message_out_deflate - Error inflate (2)");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "websocket_extension_message_out_deflate - Error inflate (2)");
               ret = U_ERROR;
               break;
           }
           (*data_len_out) += _U_W_BUFF_LEN - deflate_context->defstream.avail_out;
         } else {
-          y_log_message(Y_LOG_LEVEL_ERROR, "websocket_extension_message_out_deflate - Error allocating resources for data_in_suffix (2)");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "websocket_extension_message_out_deflate - Error allocating resources for data_in_suffix (2)");
           ret = U_ERROR;
         }
       }
@@ -900,7 +900,7 @@ int websocket_extension_message_out_deflate_test(const uint8_t opcode,
         *rsv |= U_WEBSOCKET_RSV1;
       }
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "websocket_extension_message_out_deflate - Error context is NULL");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "websocket_extension_message_out_deflate - Error context is NULL");
       ret = U_ERROR;
     }
   } else {
@@ -950,13 +950,13 @@ int websocket_extension_message_in_inflate_test(const uint8_t opcode,
               case Z_BUF_ERROR:
                 break;
               default:
-                y_log_message(Y_LOG_LEVEL_ERROR, "websocket_extension_message_in_inflate - Error inflate");
+                ulfius_log_message(ULFIUS_LOG_ERROR, "websocket_extension_message_in_inflate - Error inflate");
                 ret = U_ERROR;
                 break;
             }
             (*data_len_out) += _U_W_BUFF_LEN - deflate_context->infstream.avail_out;
           } else {
-            y_log_message(Y_LOG_LEVEL_ERROR, "websocket_extension_message_in_inflate - Error allocating resources for data_in_suffix");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "websocket_extension_message_in_inflate - Error allocating resources for data_in_suffix");
             ret = U_ERROR;
           }
         } while (U_OK == ret && deflate_context->infstream.avail_out == 0);
@@ -968,11 +968,11 @@ int websocket_extension_message_in_inflate_test(const uint8_t opcode,
           *data_len_out = 0;
         }
       } else {
-        y_log_message(Y_LOG_LEVEL_ERROR, "websocket_extension_message_in_inflate - Error allocating resources for data_in_suffix");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "websocket_extension_message_in_inflate - Error allocating resources for data_in_suffix");
         ret = U_ERROR;
       }
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "websocket_extension_message_in_inflate - Error context is NULL");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "websocket_extension_message_in_inflate - Error context is NULL");
       ret = U_ERROR;
     }
   } else {
@@ -983,7 +983,7 @@ int websocket_extension_message_in_inflate_test(const uint8_t opcode,
       memcpy(*data_out, data_in, data_len_in);
       ret = U_OK;
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "websocket_extension_message_in_inflate - Error allocating resources for data_out");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "websocket_extension_message_in_inflate - Error allocating resources for data_out");
       ret = U_ERROR;
     }
   }
@@ -1514,7 +1514,6 @@ int main(void)
   int number_failed;
   Suite *s;
   SRunner *sr;
-  //y_init_logs("Ulfius", Y_LOG_MODE_CONSOLE, Y_LOG_LEVEL_DEBUG, NULL, "Starting Ulfius websocket tests");
   ulfius_global_init();
   s = ulfius_suite();
   sr = srunner_create(s);
@@ -1530,6 +1529,5 @@ int main(void)
   pthread_mutex_destroy(&ws_lock);
   pthread_cond_destroy(&ws_cond);
 
-  //y_close_logs();
 	return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

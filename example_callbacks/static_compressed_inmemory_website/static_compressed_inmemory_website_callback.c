@@ -198,13 +198,13 @@ static int callback_static_file_uncompressed (const struct _u_request * request,
         content_type = u_map_get_case(&((struct _u_compressed_inmemory_website_config *)user_data)->mime_types, get_filename_ext(file_requested));
         if (content_type == NULL) {
           content_type = u_map_get(&((struct _u_compressed_inmemory_website_config *)user_data)->mime_types, "*");
-          y_log_message(Y_LOG_LEVEL_WARNING, "Static File Server - Unknown mime type for extension %s", get_filename_ext(file_requested));
+          ulfius_log_message(ULFIUS_LOG_WARNING, "Static File Server - Unknown mime type for extension %s", get_filename_ext(file_requested));
         }
         u_map_put(response->map_header, "Content-Type", content_type);
         u_map_copy_into(response->map_header, &((struct _u_compressed_inmemory_website_config *)user_data)->map_header);
 
         if (ulfius_set_stream_response(response, 200, callback_static_file_uncompressed_stream, callback_static_file_uncompressed_stream_free, length, CHUNK, f) != U_OK) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Static File Server - Error ulfius_set_stream_response");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Static File Server - Error ulfius_set_stream_response");
         }
       } else {
         if (((struct _u_compressed_inmemory_website_config *)user_data)->redirect_on_404 == NULL) {
@@ -227,7 +227,7 @@ static int callback_static_file_uncompressed (const struct _u_request * request,
     free(real_path); // realpath uses malloc
 
   } else {
-    y_log_message(Y_LOG_LEVEL_ERROR, "Static File Server - Error, user_data is NULL or inconsistent");
+    ulfius_log_message(ULFIUS_LOG_ERROR, "Static File Server - Error, user_data is NULL or inconsistent");
     ret = U_CALLBACK_ERROR;
   }
   return ret;
@@ -247,18 +247,18 @@ int u_init_compressed_inmemory_website_config(struct _u_compressed_inmemory_webs
     config->mime_types_compressed_size = 0;
     config->allow_cache_compressed     = 1;
     if ((ret = u_map_init(&(config->mime_types))) != U_OK) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "u_init_compressed_inmemory_website_config - Error u_map_init mime_types");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "u_init_compressed_inmemory_website_config - Error u_map_init mime_types");
     } else if ((ret = u_map_init(&(config->map_header))) != U_OK) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "u_init_compressed_inmemory_website_config - Error u_map_init map_header");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "u_init_compressed_inmemory_website_config - Error u_map_init map_header");
     } else if ((ret = u_map_init(&(config->gzip_files))) != U_OK) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "u_init_compressed_inmemory_website_config - Error u_map_init gzip_files");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "u_init_compressed_inmemory_website_config - Error u_map_init gzip_files");
     } else if ((ret = u_map_init(&(config->deflate_files))) != U_OK) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "u_init_compressed_inmemory_website_config - Error u_map_init deflate_files");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "u_init_compressed_inmemory_website_config - Error u_map_init deflate_files");
     } else {
       pthread_mutexattr_init (&mutexattr);
       pthread_mutexattr_settype(&mutexattr, PTHREAD_MUTEX_RECURSIVE);
       if (pthread_mutex_init(&(config->lock), &mutexattr) != 0) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "u_init_compressed_inmemory_website_config - Error pthread_mutex_init");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "u_init_compressed_inmemory_website_config - Error pthread_mutex_init");
         ret = U_ERROR;
       }
     }
@@ -286,7 +286,7 @@ int u_add_mime_types_compressed(struct _u_compressed_inmemory_website_config * c
       config->mime_types_compressed_size++;
       ret = U_OK;
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "u_add_mime_types_compressed - Error allocating resources for mime_types_compressed");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "u_add_mime_types_compressed - Error allocating resources for mime_types_compressed");
       ret = U_ERROR;
     }
   } else {
@@ -373,7 +373,7 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
                   content_type = u_map_get_case(&config->mime_types, get_filename_ext(file_requested));
                   if (content_type == NULL) {
                     content_type = u_map_get(&config->mime_types, "*");
-                    y_log_message(Y_LOG_LEVEL_WARNING, "Static File Server - Unknown mime type for extension %s", get_filename_ext(file_requested));
+                    ulfius_log_message(ULFIUS_LOG_WARNING, "Static File Server - Unknown mime type for extension %s", get_filename_ext(file_requested));
                   }
                   if (!string_array_has_value((const char **)config->mime_types_compressed, content_type)) {
                     ret = callback_static_file_uncompressed(request, response, user_data);
@@ -404,12 +404,12 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
                                            U_GZIP_WINDOW_BITS | U_GZIP_ENCODING,
                                            8,
                                            Z_DEFAULT_STRATEGY) != Z_OK) {
-                            y_log_message(Y_LOG_LEVEL_ERROR, "callback_static_compressed_inmemory_website - Error deflateInit (gzip)");
+                            ulfius_log_message(ULFIUS_LOG_ERROR, "callback_static_compressed_inmemory_website - Error deflateInit (gzip)");
                             ret = U_CALLBACK_ERROR;
                           }
                         } else {
                           if (deflateInit(&defstream, Z_BEST_COMPRESSION) != Z_OK) {
-                            y_log_message(Y_LOG_LEVEL_ERROR, "callback_static_compressed_inmemory_website - Error deflateInit (deflate)");
+                            ulfius_log_message(ULFIUS_LOG_ERROR, "callback_static_compressed_inmemory_website - Error deflateInit (deflate)");
                             ret = U_CALLBACK_ERROR;
                           }
                         }
@@ -424,13 +424,13 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
                                 case Z_BUF_ERROR:
                                   break;
                                 default:
-                                  y_log_message(Y_LOG_LEVEL_ERROR, "callback_static_compressed_inmemory_website - Error deflate %d", res);
+                                  ulfius_log_message(ULFIUS_LOG_ERROR, "callback_static_compressed_inmemory_website - Error deflate %d", res);
                                   ret = U_CALLBACK_ERROR;
                                   break;
                               }
                               data_zip_len += _U_W_BLOCK_SIZE - defstream.avail_out;
                             } else {
-                              y_log_message(Y_LOG_LEVEL_ERROR, "callback_static_compressed_inmemory_website - Error allocating resources for data_zip");
+                              ulfius_log_message(ULFIUS_LOG_ERROR, "callback_static_compressed_inmemory_website - Error allocating resources for data_zip");
                               ret = U_CALLBACK_ERROR;
                             }
                           } while (U_CALLBACK_CONTINUE == ret && defstream.avail_out == 0);
@@ -457,7 +457,7 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
                         deflateEnd(&defstream);
                         o_free(data_zip);
                       } else {
-                        y_log_message(Y_LOG_LEVEL_ERROR, "callback_static_compressed_inmemory_website - Error allocating resource for file_content or data_zip");
+                        ulfius_log_message(ULFIUS_LOG_ERROR, "callback_static_compressed_inmemory_website - Error allocating resource for file_content or data_zip");
                         ret = U_CALLBACK_ERROR;
                       }
                       o_free(file_content_orig);
@@ -474,7 +474,7 @@ int callback_static_compressed_inmemory_website (const struct _u_request * reque
                 }
                 pthread_mutex_unlock(&config->lock);
               } else {
-                y_log_message(Y_LOG_LEVEL_ERROR, "callback_static_compressed_inmemory_website - Error pthread_lock_mutex");
+                ulfius_log_message(ULFIUS_LOG_ERROR, "callback_static_compressed_inmemory_website - Error pthread_lock_mutex");
                 ret = U_CALLBACK_ERROR;
               }
             } else {

@@ -82,12 +82,12 @@ $ pkg-config --cflags libulfius
 -I/usr/include
 $ # linker flags
 $ pkg-config --libs libulfius
--L/usr/lib -lulfius -lorcania -lyder
+-L/usr/lib -lulfius -lorcania
 ```
 
-If you don't or can't have pkg-config for the build, you can set the linker options `-lulfius -lorcania -lyder`.
+If you don't or can't have pkg-config for the build, you can set the linker options `-lulfius -lorcania`.
 
-The options `-lorcania` and `-lyder` are not necessary if you don't directly use Orcania or Yder functions. But in doubt, add them anyway.
+Link Orcania explicitly when using its functions directly.
 
 On your linker command, add Ulfius as a dependency library, e.g. `-lulfius` for gcc.
 
@@ -2541,3 +2541,96 @@ The return value for the callback functions must be adapted, instead of U_OK, U_
 If you want more details on the multiple callback functions, check the [documentation](#callback-functions-return-value).
 
 Other functions may have change their name or signature, check the documentation for more information.
+
+## Application logging
+
+Ulfius logging uses an application-installed callback. Logging is disabled until
+registered; it does not open files, initialize syslog, or install a global logger
+in another library. The callback receives severity, formatted text, and the
+application's context pointer. Applications supply their own timestamps, names,
+output destinations and synchronization.
+
+```c
+#include <stdio.h>
+#include <ulfius.h>
+
+static void app_log(void *context, ulfius_log_level_t level, const char *message)
+{
+        FILE *stream = context;
+        fprintf(stream, "[%d] %s\n", (int)level, message);
+}
+
+int main(void)
+{
+        if (ulfius_set_log_callback(ULFIUS_LOG_WARNING, app_log, stderr) != U_OK) {
+                return 1;
+        }
+        /* run application work here */
+        return ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL) == U_OK ? 0 : 1;
+}
+```
+
+The threshold enables ERROR through the selected level, up to DEBUG. Invalid
+arguments return `U_ERROR_PARAMS` without changing registration. Callbacks run
+synchronously on emitting threads and may run concurrently. Message storage is
+borrowed until callback return; copy it to retain it. Long messages use temporary
+libc-owned storage, independent of application allocator hooks. If formatting or
+allocation fails, the hook receives an ERROR message saying formatting failed.
+TLS setup failure safely discards the message.
+
+Replacing or unregistering a hook waits for all old callbacks to finish. Messages
+arriving during this transition may be dropped. Do not hold a lock/resource that
+callbacks need while calling the setter. The setter cannot be invoked from a
+callback (`U_ERROR`, registration retained), and callbacks must not wait for a
+thread that is changing the hook. Other synchronization errors also retain the
+previous registration. Only successful unregistration permits freeing its context.
+
+Callbacks must not re-enter other Ulfius operations: some emitters already hold
+library locks. Same-thread recursive logging is suppressed. Callbacks reached from
+inside Ulfius must return normally. Only callbacks reached through direct application
+calls to `ulfius_log_message` may use deferred cancellation or `pthread_exit`: the
+logger releases its in-flight reference and temporary storage, but cannot unwind
+an interrupted library operation. Asynchronous cancellation and `longjmp` are unsupported. These
+APIs are not signal-safe. After a multithreaded `fork`, the child must `exec` before
+using logging. Registration is application-owned and process-wide; dependent
+libraries must not replace their application's hook.
+
+### Migration from Yder
+
+This is the unreleased 3.0.0 API transition with SONAME 3.0, not a drop-in 2.7 patch.
+`ulfius.h` no longer includes `yder.h`; Ulfius neither links Yder nor exports
+replacement `y_*` functions. Existing applications that use Yder for their own
+logging must include/link it explicitly, or migrate their sink to the callback
+above. Yder registration no longer controls Ulfius diagnostics. Existing HTTP,
+WebSocket, streaming and extension callback interfaces are unchanged.
+
+Replace `y_init_logs`/`y_set_logs_callback` with `ulfius_set_log_callback` and
+`y_close_logs` with successful hook unregistration before destroying sink state.
+The new callback omits Yder's application-name and timestamp arguments; keep the
+name in context and generate timestamps in the application if needed. Map old
+`Y_LOG_LEVEL_*` constants to `ULFIUS_LOG_*`; numeric values are not interchangeable.
+The obsolete `WITH_YDER`, `YDERFLAG` and `U_DISABLE_YDER` build switches are removed;
+the callback API is always available and disabled at runtime until registered.
+The 3.0 development implementation requires full POSIX pthread facilities;
+FreeRTOS and native Windows compatibility must be restored and validated before
+release support is claimed (see [platform requirements](INSTALL.md#embedded-and-non-posix-targets-in-30-development)).
+
+The `uwsc --output-log-file` option remains available through a tool-owned sink.
+Optional Iddawc/Rhonabwy examples may still inherit their own dependencies; those
+are not dependencies of Ulfius or uwsc.
+
+Applications retaining Yder can bridge explicitly after initializing their own
+Yder sink. Ulfius itself does not include or link Yder:
+
+```c
+#include <yder.h>
+static void yder_bridge(void *context, ulfius_log_level_t level, const char *message)
+{
+        const unsigned long levels[] = { Y_LOG_LEVEL_NONE, Y_LOG_LEVEL_NONE,
+                Y_LOG_LEVEL_ERROR, Y_LOG_LEVEL_WARNING, Y_LOG_LEVEL_INFO, Y_LOG_LEVEL_DEBUG };
+        (void)context;
+        y_log_message(levels[level], "%s", message);
+}
+/* register with ulfius_set_log_callback(ULFIUS_LOG_DEBUG, yder_bridge, NULL),
+ * then unregister successfully before closing the application's Yder sink */
+```

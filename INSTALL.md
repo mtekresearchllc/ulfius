@@ -29,7 +29,6 @@ Ulfius requires the following dependencies.
 - libjansson (optional), minimum 2.4, required for json support
 - libgnutls, libgcrypt (optional), required for Websockets and https support
 - libcurl (optional), required to send http/smtp requests
-- libsystemd (optional), required for [Yder](https://github.com/babelouest/yder) to log messages in journald
 - zlib (optional), required for Websockets support
 
 Note: the build stacks require a compiler (`gcc` or `clang`), `make`, `cmake` (if using CMake build), and `pkg-config`.
@@ -42,18 +41,15 @@ For example, to install all the external dependencies on Debian Stretch, run as 
 
 ### Good ol' Makefile
 
-Download Orcania, Yder and Ulfius source code from GitHub, compile and install Orcania, then Yder, then compile and install Ulfius:
+Download Orcania and Ulfius source code from GitHub, install Orcania, then Ulfius:
 
 Last Orcania release: [https://github.com/babelouest/orcania/releases/latest/](https://github.com/babelouest/orcania/releases/latest/)
-Last Yder release: [https://github.com/babelouest/yder/releases/latest/](t/](https://github.com/babelouest/orcania/releases/latest/)
 Last Ulfius release: [https://github.com/mtekresearchllc/ulfius/releases/latest/](https://github.com/mtekresearchllc/ulfius/releases/latest/)
 
 **Note: Make sure all the previous installed version of those libraries, via a package manager for example, are removed.**
 
 ```shell
 $ cd <orcania_source>
-$ make && sudo make install
-$ cd <yder_source>
 $ make && sudo make install
 $ cd <ulfius_source>
 $ make && sudo make install
@@ -91,11 +87,6 @@ To disable websocket implementation, append the option `WEBSOCKETFLAG=1` to the 
 $ make WEBSOCKETFLAG=1
 ```
 
-To disable Yder library (you will no longer have log messages available!), append the option `YDERFLAG=1` to the make command when you build Ulfius:
-
-```shell
-$ make YDERFLAG=1
-```
 
 To disable uwsc build, append the option `UWSCFLAG=1` to the make command when you build Ulfius:
 
@@ -118,7 +109,34 @@ $ cd src
 $ make static && sudo make static-install # or make DESTDIR=/tmp static-install if you want to install in `/tmp/lib`
 ```
 
-#### Enable embedded systems flags
+#### Upgrading a legacy Make installation
+
+Before installing 3.0 over a Make-built 2.7 release, stop its consumers and run
+`make -C src DESTDIR=/your/prefix uninstall` from the **old 2.7 source tree**.
+Legacy Make builds used the unversioned SONAME `libulfius.so`; keeping their real
+`libulfius.so.2.7.x` file in the installation directory lets a later `ldconfig`
+restore the linker name to that old library. Merely replacing the symlink is not
+sufficient. Confirm the old Make-built file is removed before installing 3.0,
+then rebuild and migrate all consumers to the new logging API. Old binaries with
+`NEEDED libulfius.so` cannot safely share that installation with 3.0.
+
+CMake/distribution 2.7 libraries with SONAME `libulfius.so.2.7` do not have this
+collision and may coexist. Do not remove such libraries with a broad 2.x glob.
+
+#### Embedded and non-POSIX targets in 3.0 development
+
+The new logging implementation requires POSIX pthread mutexes, conditions,
+`pthread_once`, thread-specific keys, deferred cancellation and cleanup handlers.
+The tested 3.0 development builds use Linux pthreads. FreeRTOS compatibility layers
+and native Windows builds without those facilities are not currently supported
+by this implementation; a platform backend must be implemented and validated before
+claiming support for them. No additional threading package is bundled or required
+on the tested Linux targets. Retain a 2.7 release for those other targets meanwhile.
+
+The legacy embedded flags below remain for porting work; they do not establish
+3.0 compatibility or remove the logging thread requirements.
+
+#### Embedded networking flags
 
 To build Ulfius on [FreeRTOS](https://www.freertos.org/), append the option `FREERTOSFLAG=1` to the make command when you build Ulfius:
 
@@ -136,7 +154,7 @@ Those two options are exclusive, you can't use them both at the same time.
 
 #### Installation directory
 
-By default, the shared libraries and the header files will be installed in the `/usr/local` location. To change this setting, you can modify the `DESTDIR` value in the `src/Makefile`, `lib/orcania/src/Makefile` and `lib/yder/src/Makefile` files.
+By default, the shared libraries and the header files will be installed in the `/usr/local` location. To change this setting, you can modify the `DESTDIR` value in `src/Makefile` and `lib/orcania/src/Makefile`.
 
 ```shell
 $ make DESTDIR=/tmp install # to install ulfius in /tmp/lib for example
@@ -173,8 +191,6 @@ The available options for CMake are:
 - `-DWITH_CURL=[on|off]` (default `on`): Build with libcurl dependency
 - `-DWITH_GNUTLS=[on|off]` (default `on`): Build with GNU TLS extensions (HTTPS client certificate support), requires GnuTLS library.
 - `-DWITH_WEBSOCKET=[on|off]` (default `on`): Build with websocket functions, not available for Windows, requires libmicrohttpd 0.9.53 minimum.
-- `-DWITH_JOURNALD=[on|off]` (default `on`): Build with journald (SystemD) support for logging
-- `-DWITH_YDER=[on|off]` (default `on`): Build with Yder library for logging messages
 - `-DBUILD_UWSC=[on|off]` (default `on`): Build uwsc
 - `-DBUILD_STATIC=[on|off]` (default `off`): Build the static archive in addition to the shared library
 - `-DBUILD_ULFIUS_TESTING=[on|off]` (default `off`): Build unit tests

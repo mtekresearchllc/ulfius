@@ -34,3 +34,5 @@ tools/uwsc/valgrind.txt
 *.crt
 *.key
 doc/API.md
+/test/logging
+/test/logging_faults

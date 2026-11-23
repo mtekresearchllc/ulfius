@@ -4,7 +4,7 @@
 #
 # Find GnuTLS
 #
-# Find Yder headers and libraries.
+# Find GnuTLS headers and libraries.
 #
 # ::
 #
