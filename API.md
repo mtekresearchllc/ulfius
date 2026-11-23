@@ -82,14 +82,26 @@ $ pkg-config --cflags libulfius
 -I/usr/include
 $ # linker flags
 $ pkg-config --libs libulfius
--L/usr/lib -lulfius -lorcania
+-L/usr/lib -lulfius
 ```
 
-If you don't or can't have pkg-config for the build, you can set the linker options `-lulfius -lorcania`.
+If you don't or can't have pkg-config for the build, you can set the linker options `-lulfius`.
 
-Link Orcania explicitly when using its functions directly.
+Ulfius does not require Orcania or Yder.
 
 On your linker command, add Ulfius as a dependency library, e.g. `-lulfius` for gcc.
+
+### Compiling supplied callbacks
+
+The callbacks in `example_callbacks/` use private support sources. Copy and
+compile `src/u_string.c` and `src/u_token.c` with the callback, and include their
+headers from `include/`. A CMake installation places these four files in
+`share/doc/ulfius/utility_support`; a Make installation installs the library and
+public headers only, so obtain support files from the matching source release.
+These helpers are not exported by the library and are not a supported public API.
+They call the public Ulfius allocator, so do not compile a second `u_memory.c`
+into your application. Optional authentication callbacks retain their documented
+Rhonabwy or Iddawc dependencies.
 
 ## Return values <a name="return-values"></a>
 
@@ -106,16 +118,52 @@ When specified, some functions return `U_OK` on success, and other values otherw
 
 ## Memory management <a name="memory-management"></a>
 
-Ulfius uses the memory allocation functions `malloc/realloc/calloc/free` by default, but you can overwrite this and use any other memory allocation functions of your choice. Use Orcania's functions `o_set_alloc_funcs` and `o_get_alloc_funcs` to set and get memory allocation functions.
+Ulfius uses libc allocation by default. Configure an alternative allocator before
+any Ulfius operation or worker thread starts:
 
-```C
-void o_set_alloc_funcs(o_malloc_t malloc_fn, o_realloc_t realloc_fn, o_free_t free_fn);
-void o_get_alloc_funcs(o_malloc_t * malloc_fn, o_realloc_t * realloc_fn, o_free_t * free_fn);
+```c
+int ulfius_set_alloc_funcs(ulfius_malloc_t allocate,
+                          ulfius_realloc_t resize, ulfius_free_t release);
+void ulfius_get_alloc_funcs(ulfius_malloc_t *allocate,
+                           ulfius_realloc_t *resize, ulfius_free_t *release);
+void *ulfius_malloc(size_t size);
+void *ulfius_realloc(void *ptr, size_t size);
+void u_free(void *ptr);
 ```
 
-Accessing those functions requires you to directly link your application also against the Orcania library. To do so, add `-lorcania` to your linking command.
+All three callbacks must be supplied together; three NULL callbacks restore libc
+before first use. A partial tuple returns `U_ERROR_PARAMS`. The first allocation,
+reallocation, free, or `ulfius_global_init()` permanently freezes the configuration;
+subsequent setters return `U_ERROR`. Even zero-size operations and `u_free(NULL)`
+freeze it. Callbacks and their state must remain valid for process lifetime,
+including cleanup on detached WebSocket threads. The getter does not freeze the
+configuration; its result is final only after first use. Initialize before spawning
+threads or forking; only async-signal-safe operations are permitted in the child of
+a multithreaded process before exec.
 
-If you use a version of `libmicrohttpd` older than `0.9.61`, you need to set the `mhd_response_copy_data = 1` in your `_u_instance` if you use a memory allocator whose allocated return values may not directly be passed to free() or if you want to make sure all free() will always go via your user-provided free callback.
+Allocation callbacks must support `realloc(NULL, size)` and preserve the original
+allocation on failure. `ulfius_malloc(0)` returns NULL without calling a hook.
+`ulfius_realloc(ptr, 0)` returns NULL **without freeing ptr**. `u_free(NULL)` calls
+no hook. Release Ulfius-owned values with `u_free`, including buffers supplied to
+WebSocket extensions. Do not mix these allocations with Orcania's allocator.
+
+Ulfius leaves libcurl and Jansson global allocators unchanged. Jansson objects
+remain in the application's Jansson allocation domain; JSON bodies are serialized
+into Ulfius-owned buffers. The supported Jansson minimum is 2.4. JSON body
+serialization failure clears the old body and returns `U_ERROR_MEMORY`;
+WebSocket JSON serialization failure returns that error without sending a frame.
+
+Pair every successful `ulfius_global_init()` with `ulfius_global_close()`. Nested
+initializations share one internal libcurl initialization and the final close
+releases it. An unmatched close does nothing. Applications using libcurl directly
+must still pair their own initialization and cleanup calls.
+
+For libmicrohttpd older than 0.9.61, response bodies are copied before Ulfius frees
+them. Newer versions use the Ulfius free callback. `mhd_response_copy_data` remains
+for structure layout compatibility but is ignored. WebSocket collection fields now
+use the opaque `u_pointer_list_t`; applications must not manipulate these private
+collections with Orcania functions. Public structure field offsets are unchanged,
+but consumers must rebuild for the new major version and migrate allocator hooks.
 
 Data structures allocated have their specific cleanup functions. To free pointer allocated, you should use the function `u_free` that is intended to use your memory management functions.
 
@@ -209,8 +257,7 @@ The `struct _u_instance` is defined as:
  * websocket_handler:      handler for the websocket structure
  * file_upload_callback:   callback function to manage file upload by blocks
  * file_upload_cls:        any pointer to pass to the file_upload_callback function
- * mhd_response_copy_data: to choose between MHD_RESPMEM_MUST_COPY and MHD_RESPMEM_MUST_FREE, only if you use MHD < 0.9.61, 
- *                         otherwise this option is skipped because it's useless
+ * mhd_response_copy_data: retained for layout compatibility, ignored
  * check_utf8:             check that all parameters values in the request (url, header and post_body)
  *                         are valid utf8 strings, if a parameter value has non utf8 character, the value
  *                         will be ignored, default 1
@@ -1596,7 +1643,7 @@ int websocket_extension_server_match(const char * extension_client,
 int websocket_extension_client_match(const char * extension_server, void * user_data, void ** context);
 ```
 
-The callback function `websocket_extension_message_out_perform` can modify the message data and data length and the RSV flags. The callback function `websocket_extension_message_in_perform` can modify the message data only. Inside these functions, `data_in` and `data_len_in` are the current data, your extension callback function must update `data_out` with a `o_malloc`'ed data and set the new data length using `data_len_out` and return `U_OK` on success.
+The callback function `websocket_extension_message_out_perform` can modify the message data and data length and the RSV flags. The callback function `websocket_extension_message_in_perform` can modify the message data only. Inside these functions, `data_in` and `data_len_in` are the current data, your extension callback function must update `data_out` with a `ulfius_malloc`-allocated data and set the new data length using `data_len_out` and return `U_OK` on success.
 If your function doesn't return `U_OK`, the message data won't be updated and `data_out` won't be free'd if set.
 
 You can call `ulfius_add_websocket_extension_message_perform` or `ulfius_add_websocket_client_extension_message_perform` multiple times for a websocket definition. In that case the extension callbacks function will be called in the same order for the `websocket_extension_message_out_perform` callbacks, and in reverse order for the `websocket_extension_message_in_perform` callbacks.

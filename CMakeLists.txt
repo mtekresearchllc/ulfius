@@ -58,8 +58,7 @@ set(PROJECT_VERSION_NUMBER "${LIBRARY_VERSION_MAJOR_PAD}${LIBRARY_VERSION_MINOR_
 
 set(LIBRARY_VERSION "${LIBRARY_VERSION_MAJOR}.${LIBRARY_VERSION_MINOR}.${LIBRARY_VERSION_PATCH}")
 set(LIBRARY_SOVERSION "${LIBRARY_VERSION_MAJOR}.${LIBRARY_VERSION_MINOR}")
-set(ORCANIA_VERSION_REQUIRED "2.3.3")
-set(JANSSON_VERSION_REQUIRED "2.1")
+set(JANSSON_VERSION_REQUIRED "2.4")
 
 # cmake modules
 
@@ -94,7 +93,13 @@ set(UWSC_DIR ${CMAKE_CURRENT_SOURCE_DIR}/tools/uwsc)
 
 include_directories(${INC_DIR})
 
+set(ULFIUS_UTILITY_SRC
+    ${SRC_DIR}/u_string.c ${SRC_DIR}/u_token.c ${SRC_DIR}/u_base64.c
+    ${SRC_DIR}/u_list.c ${SRC_DIR}/u_json.c)
+
 set(LIB_SRC
+    ${ULFIUS_UTILITY_SRC}
+    ${SRC_DIR}/u_memory.c ${SRC_DIR}/u_mhd.c
     ${INC_DIR}/ulfius.h
     ${INC_DIR}/u_private.h
     ${INC_DIR}/yuarel.h
@@ -195,7 +200,7 @@ if (NOT BUILD_STATIC AND NOT BUILD_SHARED)
 endif ()
 
 # TO MY FUTURE SELF
-# The following 2 blocks are put BEFORE searching for Orcania by design
+# library targets
 # Otherwise it will lead to cmake errors
 # DON'T MOVE IT BELOW PLEASE!
 
@@ -209,9 +214,8 @@ if (BUILD_STATIC)
         PUBLIC "$<BUILD_INTERFACE:${PROJECT_BINARY_DIR}>"
         PUBLIC "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
     target_link_libraries(ulfius_static PUBLIC ${ULFIUS_LIBS})
-    target_compile_definitions(ulfius_static PUBLIC O_STATIC_LIBRARY)
     set_target_properties(ulfius_static PROPERTIES
-            PUBLIC_HEADER "${INC_DIR}/ulfius.h;${INC_DIR}/u_logging.h;${PROJECT_BINARY_DIR}/ulfius-cfg.h"
+            PUBLIC_HEADER "${INC_DIR}/ulfius.h;${INC_DIR}/u_logging.h;${INC_DIR}/u_memory.h;${PROJECT_BINARY_DIR}/ulfius-cfg.h"
             OUTPUT_NAME ulfius
             EXPORT_NAME Ulfius-static)
     if (MSVC)
@@ -235,7 +239,7 @@ if (BUILD_SHARED)
         PUBLIC "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
     target_link_libraries(ulfius PUBLIC ${ULFIUS_LIBS})
     set_target_properties(ulfius PROPERTIES
-            PUBLIC_HEADER "${INC_DIR}/ulfius.h;${INC_DIR}/u_logging.h;${PROJECT_BINARY_DIR}/ulfius-cfg.h"
+            PUBLIC_HEADER "${INC_DIR}/ulfius.h;${INC_DIR}/u_logging.h;${INC_DIR}/u_memory.h;${PROJECT_BINARY_DIR}/ulfius-cfg.h"
             VERSION "${LIBRARY_VERSION}"
             SOVERSION "${LIBRARY_SOVERSION}"
             WINDOWS_EXPORT_ALL_SYMBOLS TRUE
@@ -271,32 +275,12 @@ if (BUILD_ULFIUS_DOCUMENTATION)
     endif ()
 endif ()
 
-# dependencies
-
-find_package(Orcania ${ORCANIA_VERSION_REQUIRED} REQUIRED)
-if ("${ORCANIA_VERSION_STRING}" VERSION_GREATER_EQUAL "${ORCANIA_VERSION_REQUIRED}")
-    message(STATUS "Orcania found: ${ORCANIA_VERSION_STRING}")
-else ()
-    message( FATAL_ERROR "Orcania version required: ${ORCANIA_VERSION_REQUIRED} - version installed: ${ORCANIA_VERSION_STRING}")
-endif ()
-
-if (BUILD_SHARED)
-    target_link_libraries(ulfius PUBLIC $<TARGET_NAME:Orcania::Orcania>)
-endif ()
-if (BUILD_STATIC)
-    if(TARGET Orcania::Orcania-static)
-        target_link_libraries(ulfius_static PUBLIC $<TARGET_NAME:Orcania::Orcania-static>)
-    else()
-        target_link_libraries(ulfius_static PUBLIC $<TARGET_NAME:Orcania::Orcania>)
-    endif()
-endif ()
-
 # build uwsc
 
 cmake_dependent_option(BUILD_UWSC "Build uwsc application." ON "WITH_WEBSOCKET" OFF)
 
 if (BUILD_UWSC)
-    add_executable(uwsc ${UWSC_DIR}/uwsc.c ${INC_DIR}/ulfius.h ${INC_DIR}/u_private.h ${PROJECT_BINARY_DIR}/ulfius-cfg.h)
+    add_executable(uwsc ${UWSC_DIR}/uwsc.c ${SRC_DIR}/u_string.c ${SRC_DIR}/u_token.c ${INC_DIR}/ulfius.h ${INC_DIR}/u_private.h ${PROJECT_BINARY_DIR}/ulfius-cfg.h)
     set_target_properties(uwsc PROPERTIES SKIP_BUILD_RPATH TRUE)
     add_dependencies(uwsc ulfius)
     target_link_libraries(uwsc PRIVATE "${ulfius_lib}")
@@ -306,20 +290,20 @@ if (BUILD_UWSC)
 endif ()
 
 set(PKGCONF_REQ "")
-set(PKGCONF_REQ_PRIVATE "liborcania")
+set(PKGCONF_REQ_PRIVATE "")
 if (WITH_CURL)
-  set (PKGCONF_REQ_PRIVATE "${PKGCONF_REQ_PRIVATE}, libcurl")
+  set (PKGCONF_REQ_PRIVATE "${PKGCONF_REQ_PRIVATE} libcurl")
 endif ()
 if (WITH_JANSSON)
-  set (PKGCONF_REQ_PRIVATE "${PKGCONF_REQ_PRIVATE}, jansson")
+  set (PKGCONF_REQ_PRIVATE "${PKGCONF_REQ_PRIVATE} jansson >= 2.4")
 endif ()
 if (WITH_GNUTLS)
-  set (PKGCONF_REQ_PRIVATE "${PKGCONF_REQ_PRIVATE}, gnutls >= 3.5.0")
+  set (PKGCONF_REQ_PRIVATE "${PKGCONF_REQ_PRIVATE} gnutls >= 3.5.0")
 endif ()
 if (WITH_WEBSOCKET)
-  set (PKGCONF_REQ_PRIVATE "${PKGCONF_REQ_PRIVATE}, libmicrohttpd >= 0.9.53")
+  set (PKGCONF_REQ_PRIVATE "${PKGCONF_REQ_PRIVATE} libmicrohttpd >= 0.9.53 zlib")
 else ()
-  set (PKGCONF_REQ_PRIVATE "${PKGCONF_REQ_PRIVATE}, libmicrohttpd >= 0.9.51")
+  set (PKGCONF_REQ_PRIVATE "${PKGCONF_REQ_PRIVATE} libmicrohttpd >= 0.9.51")
 endif ()
 
 # build ulfius-cfg.h file
@@ -357,7 +341,23 @@ if (BUILD_ULFIUS_TESTING)
             list(APPEND TEST_LIBS Subunit::Subunit)
         endif ()
         
-        set(TESTS core u_map framework example_callbacks logging logging_faults)
+        foreach (mode callback copy legacy_auth)
+            add_executable(memory_mhd_${mode} ${TST_DIR}/memory_mhd.c
+                           ${SRC_DIR}/u_mhd.c ${SRC_DIR}/u_string.c ${SRC_DIR}/u_memory.c)
+            target_include_directories(memory_mhd_${mode} PRIVATE ${PROJECT_BINARY_DIR})
+            target_link_libraries(memory_mhd_${mode} PRIVATE ${CMAKE_THREAD_LIBS_INIT} MHD::MHD)
+            if(mode STREQUAL "copy")
+                target_compile_definitions(memory_mhd_${mode} PRIVATE U_TEST_MHD_COPY)
+            elseif(mode STREQUAL "legacy_auth")
+                target_compile_definitions(memory_mhd_${mode} PRIVATE U_TEST_MHD_AUTH_FREE)
+            endif()
+            add_test(NAME memory_mhd_${mode} COMMAND memory_mhd_${mode})
+        endforeach()
+
+        set(TESTS core u_map framework example_callbacks logging logging_faults utilities memory_runtime memory_threads)
+        if (WITH_CURL AND WITH_JANSSON)
+            list(APPEND TESTS memory_http)
+        endif()
         if (WITH_WEBSOCKET)
             set(TESTS ${TESTS} websocket websocket_write_retry)
         endif ()
@@ -368,17 +368,24 @@ if (BUILD_ULFIUS_TESTING)
                 @ONLY)
     
         foreach (t ${TESTS})
-            add_executable(${t} EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/example_programs/u_example.c ${TST_DIR}/${t}.c
+            if(t MATCHES "^(utilities|memory_runtime|memory_threads|memory_http)$")
+                add_executable(${t} EXCLUDE_FROM_ALL ${ULFIUS_UTILITY_SRC} ${TST_DIR}/${t}.c)
+            else()
+            add_executable(${t} EXCLUDE_FROM_ALL ${ULFIUS_UTILITY_SRC} ${CMAKE_CURRENT_SOURCE_DIR}/example_programs/u_example.c ${TST_DIR}/${t}.c
                                                  ${EXAMPLE_CALLBACK_COMPRESSION_DIR}/http_compression_callback.c
                                                  ${EXAMPLE_CALLBACK_COMPRESSION_DIR}/http_compression_callback.h
                                                  ${EXAMPLE_CALLBACK_STATIC_FILE_DIR}/static_compressed_inmemory_website_callback.c
                                                  ${EXAMPLE_CALLBACK_STATIC_FILE_DIR}/static_compressed_inmemory_website_callback.h )
+            endif()
             target_include_directories(${t} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/example_programs/include ${TST_DIR} ${EXAMPLE_CALLBACK_COMPRESSION_DIR} ${EXAMPLE_CALLBACK_STATIC_FILE_DIR})
             target_link_libraries(${t} PRIVATE ${TEST_LIBS})
             add_test(NAME ${t}
                      WORKING_DIRECTORY ${TST_DIR}
                      COMMAND ${t})
         endforeach ()
+        foreach(mode malloc realloc free)
+            add_test(NAME memory_freeze_${mode} COMMAND memory_runtime ${mode})
+        endforeach()
 
     endif ()
 endif ()
@@ -424,6 +431,9 @@ if (INSTALL_HEADER)
             DESTINATION ${CMAKE_INSTALL_DOCDIR}/example_programs/
             COMPONENT runtime
             PATTERN example_programs/.gitignore EXCLUDE)
+    install(FILES ${SRC_DIR}/u_string.c ${SRC_DIR}/u_token.c
+                  ${INC_DIR}/u_string.h ${INC_DIR}/u_token.h
+            DESTINATION ${CMAKE_INSTALL_DOCDIR}/utility_support COMPONENT runtime)
     install(FILES README.md
             DESTINATION ${CMAKE_INSTALL_DOCDIR} COMPONENT runtime)
     install(FILES INSTALL.md
@@ -515,7 +525,7 @@ if (BUILD_DEB)
     endif ()
     set(CPACK_DEBIAN_PACKAGE_DESCRIPTION ${PROJECT_DESCRIPTION})
     set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://mtekresearchllc.github.io/ulfius/")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.4), liborcania (>= ${ORCANIA_VERSION_REQUIRED})")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.4)")
     if (WITH_CURL)
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libcurl4-gnutls-dev|libcurl4-nss-dev|libcurl4-openssl-dev|libcurl3-gnutls|libcurl3-nss|libcurl4 (>= 7.16.2)")
     endif ()

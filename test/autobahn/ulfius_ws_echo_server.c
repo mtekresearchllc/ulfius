@@ -21,7 +21,7 @@ static char * read_file(const char * filename) {
       fseek (f, 0, SEEK_END);
       length = ftell (f);
       fseek (f, 0, SEEK_SET);
-      buffer = o_malloc (length + 1);
+      buffer = ulfius_malloc (length + 1);
       if (buffer) {
         fread (buffer, 1, length, f);
         buffer[length] = '\0';
@@ -153,8 +153,8 @@ int main(int argc, char ** argv) {
       ulfius_add_endpoint_by_val(&instance_https, "GET", NULL, "*", 0, &callback_websocket_echo, NULL);
       ulfius_start_secure_framework(&instance_https, key_file, cert_file);
       ulfius_log_message(ULFIUS_LOG_INFO, "Start https websocket echo server on port %d", instance_https.port);
-      o_free(key_file);
-      o_free(cert_file);
+      u_free(key_file);
+      u_free(cert_file);
       pthread_mutex_lock(&global_handler_close_lock);
       pthread_cond_wait(&global_handler_close_cond, &global_handler_close_lock);
       pthread_mutex_unlock(&global_handler_close_lock);

@@ -18,7 +18,7 @@ ULFIUS_INCLUDE=../../include
 EXAMPLE_INCLUDE=../include
 CC=gcc
 CFLAGS+=-c -Wall -I$(ULFIUS_INCLUDE) -I$(EXAMPLE_INCLUDE) -D_REENTRANT $(ADDITIONALFLAGS) $(CPPFLAGS)
-LIBS=u_example.o -lc -lulfius -lorcania -L$(ULFIUS_LOCATION)
+LIBS=u_example.o -lc -lulfius -L$(ULFIUS_LOCATION)
 
 
 all: simple_example
@@ -43,7 +43,16 @@ test: simple_example
 	LD_LIBRARY_PATH=$(ULFIUS_LOCATION):${LD_LIBRARY_PATH} ./simple_example
 
 static: simple_example.o u_example.o
-	$(CC) -o simple_example simple_example.o $(PREFIX)/lib/liborcania.a $(PREFIX)/lib/libulfius.a -ljansson -lmicrohttpd -lpthread -lgnutls u_example.o
+	$(CC) -o simple_example simple_example.o u_string.o u_token.o $(PREFIX)/lib/libulfius.a -ljansson -lmicrohttpd -lpthread -lgnutls u_example.o
 
 u_example.o: ../u_example.c ../include/u_example.h
 	$(CC) $(CFLAGS) ../u_example.c -o $@
+
+ULFIUS_SUPPORT=$(if $(wildcard $(ULFIUS_LOCATION)/u_string.c),$(ULFIUS_LOCATION),../../utility_support)
+CFLAGS+=-I$(ULFIUS_SUPPORT)
+LIBS+=u_string.o u_token.o
+u_example.o: u_string.o u_token.o
+u_string.o: $(ULFIUS_SUPPORT)/u_string.c
+	$(CC) $(CFLAGS) -c $< -o $@
+u_token.o: $(ULFIUS_SUPPORT)/u_token.c
+	$(CC) $(CFLAGS) -c $< -o $@

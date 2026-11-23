@@ -36,3 +36,11 @@ tools/uwsc/valgrind.txt
 doc/API.md
 /test/logging
 /test/logging_faults
+
+/test/utilities
+/test/memory_runtime
+/test/memory_threads
+/test/memory_mhd_callback
+/test/memory_mhd_copy
+/test/memory_http
+/test/memory_mhd_legacy_auth

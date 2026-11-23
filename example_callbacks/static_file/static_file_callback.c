@@ -80,7 +80,8 @@
  * 
  */
 
-#include <orcania.h>
+#include "u_memory.h"
+#include "u_string.h"
 #include <string.h>
 #include <ulfius.h>
 
@@ -134,13 +135,13 @@ int callback_static_file (const struct _u_request * request, struct _u_response 
   if (request->callback_position > 0) {
     return U_CALLBACK_CONTINUE;
   } else if (user_data != NULL && ((struct _static_file_config *)user_data)->files_path != NULL) {
-    file_requested = o_strdup(request->http_url);
+    file_requested = u_strdup(request->http_url);
     url_dup_save = file_requested;
     
     while (file_requested[0] == '/') {
       file_requested++;
     }
-    file_requested += o_strlen(((struct _static_file_config *)user_data)->url_prefix);
+    file_requested += u_strlen(((struct _static_file_config *)user_data)->url_prefix);
     while (file_requested[0] == '/') {
       file_requested++;
     }
@@ -153,14 +154,14 @@ int callback_static_file (const struct _u_request * request, struct _u_response 
       *strchr(file_requested, '?') = '\0';
     }
     
-    if (file_requested == NULL || o_strlen(file_requested) == 0 || 0 == o_strcmp("/", file_requested)) {
-      o_free(url_dup_save);
-      url_dup_save = file_requested = o_strdup("index.html");
+    if (file_requested == NULL || u_strlen(file_requested) == 0 || 0 == u_strcmp("/", file_requested)) {
+      u_free(url_dup_save);
+      url_dup_save = file_requested = u_strdup("index.html");
     }
     
-    file_path = msprintf("%s/%s", ((struct _static_file_config *)user_data)->files_path, file_requested);
+    file_path = u_printf("%s/%s", ((struct _static_file_config *)user_data)->files_path, file_requested);
     real_path = realpath(file_path, NULL);
-    if (0 == o_strncmp(((struct _static_file_config *)user_data)->files_path, real_path, o_strlen(((struct _static_file_config *)user_data)->files_path))) {
+    if (0 == u_strncmp(((struct _static_file_config *)user_data)->files_path, real_path, u_strlen(((struct _static_file_config *)user_data)->files_path))) {
       if (access(file_path, F_OK) != -1) {
         f = fopen (file_path, "rb");
         if (f) {
@@ -197,8 +198,8 @@ int callback_static_file (const struct _u_request * request, struct _u_response 
       }
     }
 
-    o_free(file_path);
-    o_free(url_dup_save);
+    u_free(file_path);
+    u_free(url_dup_save);
     free(real_path); // realpath uses malloc
     return U_CALLBACK_CONTINUE;
   } else {

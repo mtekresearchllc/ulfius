@@ -1,5 +1,6 @@
 /* Public domain, no copyright. Use at your own risk. */
 #include "u_example.h"
+#include "u_string.h"
 
 #include <ulfius.h>
 
@@ -20,7 +21,7 @@ int main(int argc, char ** argv) {
   struct _u_request request;
   struct _u_response response;
   struct _websocket_client_handler websocket_client_handler;
-  const char * url_pattern = (argc>2&&0==o_strcmp("-https", argv[2]))?"wss://localhost:" PORT "/runCase?case=%s&agent=ulfius":"ws://localhost:" PORT "/runCase?case=%s&agent=ulfius", * extensions;
+  const char * url_pattern = (argc>2&&0==u_strcmp("-https", argv[2]))?"wss://localhost:" PORT "/runCase?case=%s&agent=ulfius":"ws://localhost:" PORT "/runCase?case=%s&agent=ulfius", * extensions;
   int test_case = atoi(argv[1]);
 
   FILE *log_file = fopen("ulfius_ws_echo_client.log", "a");
@@ -54,7 +55,7 @@ int main(int argc, char ** argv) {
   } else {
     extensions = "permessage-deflate";
   }
-  url = msprintf(url_pattern, argv[1]!=NULL?argv[1]:0);
+  url = u_printf(url_pattern, argv[1]!=NULL?argv[1]:0);
   if (ulfius_set_websocket_request(&request, url, NULL, extensions) == U_OK) {
     websocket_client_handler.websocket = NULL;
     websocket_client_handler.response = NULL;
@@ -74,7 +75,7 @@ int main(int argc, char ** argv) {
   } else {
     ulfius_log_message(ULFIUS_LOG_ERROR, "Error setting request parameters");
   }
-  o_free(url);
+  u_free(url);
   ulfius_clean_request(&request);
 
   if (ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL) == U_OK) {

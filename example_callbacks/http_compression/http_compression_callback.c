@@ -33,6 +33,7 @@
  */
 
 #include <string.h>
+#include "u_token.h"
 #include <ulfius.h>
 #include <zlib.h>
 
@@ -55,12 +56,12 @@
 
 static void * u_zalloc(void * q, unsigned n, unsigned m) {
   (void)q;
-  return o_malloc((size_t) n * m);
+  return ulfius_malloc((size_t) n * m);
 }
 
 static void u_zfree(void *q, void *p) {
   (void)q;
-  o_free(p);
+  u_free(p);
 }
 
 int callback_http_compression (const struct _u_request * request, struct _u_response * response, void * user_data) {
@@ -72,10 +73,10 @@ int callback_http_compression (const struct _u_request * request, struct _u_resp
   size_t data_zip_len = 0;
 
   if (response->binary_body_length && u_map_count_keys_case(request->map_header, U_ACCEPT_HEADER) == 1) {
-    if (split_string(u_map_get_case(request->map_header, U_ACCEPT_HEADER), ",", &accept_list)) {
-      if ((config == NULL || config->allow_gzip) && string_array_has_trimmed_value((const char **)accept_list, U_ACCEPT_GZIP)) {
+    if (u_split_string(u_map_get_case(request->map_header, U_ACCEPT_HEADER), ",", &accept_list)) {
+      if ((config == NULL || config->allow_gzip) && u_string_array_has_trimmed_value((const char **)accept_list, U_ACCEPT_GZIP)) {
         compress_mode = U_COMPRESS_GZIP;
-      } else if ((config == NULL || config->allow_deflate) && string_array_has_trimmed_value((const char **)accept_list, U_ACCEPT_DEFLATE)) {
+      } else if ((config == NULL || config->allow_deflate) && u_string_array_has_trimmed_value((const char **)accept_list, U_ACCEPT_DEFLATE)) {
         compress_mode = U_COMPRESS_DEFL;
       }
 
@@ -104,7 +105,7 @@ int callback_http_compression (const struct _u_request * request, struct _u_resp
         }
         if (ret == U_CALLBACK_IGNORE) {
           do {
-            if ((data_zip = o_realloc(data_zip, data_zip_len+_U_C_BLOCK_SIZE)) != NULL) {
+            if ((data_zip = ulfius_realloc(data_zip, data_zip_len+_U_C_BLOCK_SIZE)) != NULL) {
               defstream.avail_out = _U_C_BLOCK_SIZE;
               defstream.next_out = ((Bytef *)data_zip)+data_zip_len;
               switch ((res = deflate(&defstream, Z_FINISH))) {
@@ -129,11 +130,11 @@ int callback_http_compression (const struct _u_request * request, struct _u_resp
             u_map_put(response->map_header, U_CONTENT_HEADER, compress_mode==U_COMPRESS_GZIP?U_ACCEPT_GZIP:U_ACCEPT_DEFLATE);
           }
           deflateEnd(&defstream);
-          o_free(data_zip);
+          u_free(data_zip);
         }
       }
     }
-    free_string_array(accept_list);
+    u_free_string_array(accept_list);
   }
 
   return ret;

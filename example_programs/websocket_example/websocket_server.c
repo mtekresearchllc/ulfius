@@ -11,6 +11,7 @@
  */
 
 #include <sys/stat.h>
+#include "u_string.h"
 #include <sys/types.h>
 
 #include <inttypes.h>
@@ -45,7 +46,7 @@ static char * read_file(const char * filename) {
       fseek (f, 0, SEEK_END);
       length = ftell (f);
       fseek (f, 0, SEEK_SET);
-      buffer = o_malloc ((size_t)(length + 1));
+      buffer = ulfius_malloc ((size_t)(length + 1));
       if (buffer != NULL) {
         fread (buffer, 1, (size_t)length, f);
         buffer[length] = '\0';
@@ -101,7 +102,7 @@ int main(int argc, char ** argv) {
     ulfius_add_endpoint_by_val(&instance, "GET", PREFIX_STATIC, "*", 0, &callback_static_compressed_inmemory_website, &file_config);
 
     // Start the framework
-    if (argc > 3 && 0 == o_strcmp(argv[1], "-https")) {
+    if (argc > 3 && 0 == u_strcmp(argv[1], "-https")) {
       key_file = read_file(argv[2]);
       cert_file = read_file(argv[3]);
       if (key_file == NULL || cert_file == NULL) {
@@ -110,14 +111,14 @@ int main(int argc, char ** argv) {
       } else {
         ret = ulfius_start_secure_framework(&instance, key_file, cert_file);
       }
-      o_free(key_file);
-      o_free(cert_file);
+      u_free(key_file);
+      u_free(cert_file);
     } else {
       ret = ulfius_start_framework(&instance);
     }
 
     if (ret == U_OK) {
-      ulfius_log_message(ULFIUS_LOG_INFO, "Start framework on port %d %s", instance.port, (argc > 1 && 0 == o_strcmp(argv[1], "-https"))?"https mode":"http mode");
+      ulfius_log_message(ULFIUS_LOG_INFO, "Start framework on port %d %s", instance.port, (argc > 1 && 0 == u_strcmp(argv[1], "-https"))?"https mode":"http mode");
 
       // Wait for the user to press <enter> on the console to quit the application
       getchar();
@@ -149,7 +150,7 @@ void websocket_onclose_callback (const struct _u_request * request,
   (void)(websocket_manager);
   if (websocket_onclose_user_data != NULL) {
     ulfius_log_message(ULFIUS_LOG_DEBUG, "websocket_onclose_user_data is %s", (const char *)websocket_onclose_user_data);
-    o_free(websocket_onclose_user_data);
+    u_free(websocket_onclose_user_data);
   }
 }
 
@@ -179,15 +180,15 @@ void websocket_manager_callback(const struct _u_request * request,
 
   // Send text message without fragmentation
   if (ulfius_websocket_wait_close(websocket_manager, 2000) == U_WEBSOCKET_STATUS_OPEN) {
-    if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen("Message without fragmentation from server"), "Message without fragmentation from server") != U_OK) {
+    if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen("Message without fragmentation from server"), "Message without fragmentation from server") != U_OK) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Error send message without fragmentation");
     }
   }
 
   // Send text message with fragmentation for ulfius clients only, browsers seem to dislike fragmented messages
-  if (o_strncmp(u_map_get(request->map_header, "User-Agent"), U_WEBSOCKET_USER_AGENT, o_strlen(U_WEBSOCKET_USER_AGENT)) == 0 &&
+  if (u_strncmp(u_map_get(request->map_header, "User-Agent"), U_WEBSOCKET_USER_AGENT, u_strlen(U_WEBSOCKET_USER_AGENT)) == 0 &&
       ulfius_websocket_wait_close(websocket_manager, 2000) == U_WEBSOCKET_STATUS_OPEN) {
-    if (ulfius_websocket_send_fragmented_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen("Message with fragmentation from server"), "Message with fragmentation from server", 5) != U_OK) {
+    if (ulfius_websocket_send_fragmented_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen("Message with fragmentation from server"), "Message with fragmentation from server", 5) != U_OK) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Error send message with fragmentation");
     }
   }
@@ -201,7 +202,7 @@ void websocket_manager_callback(const struct _u_request * request,
 
   // Send binary message without fragmentation
   if (ulfius_websocket_wait_close(websocket_manager, 2000) == U_WEBSOCKET_STATUS_OPEN) {
-    if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_BINARY, o_strlen("Message without fragmentation from server"), "Message without fragmentation from server") != U_OK) {
+    if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_BINARY, u_strlen("Message without fragmentation from server"), "Message without fragmentation from server") != U_OK) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Error send binary message without fragmentation");
     }
   }
@@ -274,17 +275,17 @@ void websocket_incoming_file_callback (const struct _u_request * request,
                                          void * websocket_incoming_message_user_data) {
   (void)(request);
   (void)(websocket_incoming_message_user_data);
-  char * my_message = msprintf("Incoming file %p, rsv: 0x%02x, opcode: 0x%02x, mask: %d, len: %zu", last_message, last_message->rsv, last_message->opcode, last_message->has_mask, last_message->data_len);
+  char * my_message = u_printf("Incoming file %p, rsv: 0x%02x, opcode: 0x%02x, mask: %d, len: %zu", last_message, last_message->rsv, last_message->opcode, last_message->has_mask, last_message->data_len);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "%s", my_message);
-  ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen(my_message), my_message);
-  o_free(my_message);
+  ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen(my_message), my_message);
+  u_free(my_message);
 }
 
 /**
  * Ulfius main callback function that simply calls the websocket manager and closes
  */
 int callback_websocket (const struct _u_request * request, struct _u_response * response, void * user_data) {
-  char * websocket_user_data = o_strdup("my_user_data");
+  char * websocket_user_data = u_strdup("my_user_data");
   int ret;
   (void)(request);
   (void)(user_data);
@@ -298,7 +299,7 @@ int callback_websocket (const struct _u_request * request, struct _u_response * 
 }
 
 int callback_websocket_echo (const struct _u_request * request, struct _u_response * response, void * user_data) {
-  char * websocket_user_data = o_strdup("my_user_data");
+  char * websocket_user_data = u_strdup("my_user_data");
   int ret;
   (void)(request);
   (void)(user_data);

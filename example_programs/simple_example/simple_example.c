@@ -19,6 +19,7 @@
 #endif
 
 #include <string.h>
+#include "u_string.h"
 #include <ulfius.h>
 
 #include "u_example.h"
@@ -55,20 +56,20 @@ char * print_map(const struct _u_map * map) {
     for (i=0; keys[i] != NULL; i++) {
       value = u_map_get(map, keys[i]);
       len = snprintf(NULL, 0, "key is %s, value is %s", keys[i], value);
-      line = o_malloc((size_t)(len+1));
+      line = ulfius_malloc((size_t)(len+1));
       snprintf(line, (size_t)(len+1), "key is %s, value is %s", keys[i], value);
       if (to_return != NULL) {
-        len = (int)(o_strlen(to_return) + o_strlen(line) + 1);
-        to_return = o_realloc(to_return, (size_t)(len+1));
-        if (o_strlen(to_return) > 0) {
+        len = (int)(u_strlen(to_return) + u_strlen(line) + 1);
+        to_return = ulfius_realloc(to_return, (size_t)(len+1));
+        if (u_strlen(to_return) > 0) {
           strcat(to_return, "\n");
         }
       } else {
-        to_return = o_malloc((o_strlen(line) + 1));
+        to_return = ulfius_malloc((u_strlen(line) + 1));
         to_return[0] = 0;
       }
       strcat(to_return, line);
-      o_free(line);
+      u_free(line);
     }
     return to_return;
   } else {
@@ -86,7 +87,7 @@ static char * read_file(const char * filename) {
       fseek (f, 0, SEEK_END);
       length = ftell (f);
       fseek (f, 0, SEEK_SET);
-      buffer = o_malloc ((size_t)(length + 1));
+      buffer = ulfius_malloc ((size_t)(length + 1));
       if (buffer != NULL) {
         fread (buffer, 1, (size_t)length, f);
         buffer[length] = '\0';
@@ -133,19 +134,19 @@ int main (int argc, char **argv) {
   ulfius_set_default_endpoint(&instance, &callback_default, NULL);
   
   // Start the framework
-  if (argc == 4 && o_strcmp("-secure", argv[1]) == 0) {
+  if (argc == 4 && u_strcmp("-secure", argv[1]) == 0) {
     // If command-line options are -secure <key_file> <cert_file>, then open an https connection
     char * key_pem = read_file(argv[2]), * cert_pem = read_file(argv[3]);
     ret = ulfius_start_secure_framework(&instance, key_pem, cert_pem);
-    o_free(key_pem);
-    o_free(cert_pem);
+    u_free(key_pem);
+    u_free(cert_pem);
   } else {
     // Open an http connection
     ret = ulfius_start_framework(&instance);
   }
   
   if (ret == U_OK) {
-    ulfius_log_message(ULFIUS_LOG_DEBUG, "Start %sframework on port %d", ((argc == 4 && o_strcmp("-secure", argv[1]) == 0)?"secure ":""), instance.port);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "Start %sframework on port %d", ((argc == 4 && u_strcmp("-secure", argv[1]) == 0)?"secure ":""), instance.port);
     
     // Wait for the user to press <enter> on the console to quit the application
     getchar();
@@ -187,11 +188,11 @@ int callback_get_empty_response (const struct _u_request * request, struct _u_re
  */
 int callback_post_test (const struct _u_request * request, struct _u_response * response, void * user_data) {
   char * post_params = print_map(request->map_post_body);
-  char * response_body = msprintf("Hello World!\n%s", post_params);
+  char * response_body = u_printf("Hello World!\n%s", post_params);
   (void)(user_data);
   ulfius_set_string_body_response(response, 200, response_body);
-  o_free(response_body);
-  o_free(post_params);
+  u_free(response_body);
+  u_free(post_params);
   return U_CALLBACK_CONTINUE;
 }
 
@@ -202,18 +203,18 @@ int callback_all_test_foo (const struct _u_request * request, struct _u_response
   char * url_params = print_map(request->map_url), * headers = print_map(request->map_header), * cookies = print_map(request->map_cookie), 
         * post_params = print_map(request->map_post_body);
 #ifndef _WIN32
-  char * response_body = msprintf("Hello World!\n\n  method is %s\n  url is %s\n\n  parameters from the url are \n%s\n\n  cookies are \n%s\n\n  headers are \n%s\n\n  post parameters are \n%s\n\n  user data is %s\n\nclient address is %s\n\n",
+  char * response_body = u_printf("Hello World!\n\n  method is %s\n  url is %s\n\n  parameters from the url are \n%s\n\n  cookies are \n%s\n\n  headers are \n%s\n\n  post parameters are \n%s\n\n  user data is %s\n\nclient address is %s\n\n",
                                   request->http_verb, request->http_url, url_params, cookies, headers, post_params, (char *)user_data, inet_ntoa(((struct sockaddr_in *)request->client_address)->sin_addr));
 #else
-  char * response_body = msprintf("Hello World!\n\n  method is %s\n  url is %s\n\n  parameters from the url are \n%s\n\n  cookies are \n%s\n\n  headers are \n%s\n\n  post parameters are \n%s\n\n  user data is %s\n\n",
+  char * response_body = u_printf("Hello World!\n\n  method is %s\n  url is %s\n\n  parameters from the url are \n%s\n\n  cookies are \n%s\n\n  headers are \n%s\n\n  post parameters are \n%s\n\n  user data is %s\n\n",
                                   request->http_verb, request->http_url, url_params, cookies, headers, post_params, (char *)user_data);
 #endif
   ulfius_set_string_body_response(response, 200, response_body);
-  o_free(url_params);
-  o_free(headers);
-  o_free(cookies);
-  o_free(post_params);
-  o_free(response_body);
+  u_free(url_params);
+  u_free(headers);
+  u_free(cookies);
+  u_free(post_params);
+  u_free(response_body);
   return U_CALLBACK_CONTINUE;
 }
 

@@ -30,6 +30,7 @@
  */
 
 #include <gnutls/gnutls.h>
+#include "u_string.h"
 #include <gnutls/x509.h>
 #include <stdio.h>
 #include <ulfius.h>
@@ -53,7 +54,7 @@ static char * read_file(const char * filename) {
       fseek (f, 0, SEEK_END);
       length = ftell (f);
       fseek (f, 0, SEEK_SET);
-      buffer = o_malloc ((size_t)(length + 1));
+      buffer = ulfius_malloc ((size_t)(length + 1));
       if (buffer != NULL) {
         fread (buffer, 1, (size_t)length, f);
         buffer[length] = '\0';
@@ -75,7 +76,7 @@ int callback_auth_basic_body (const struct _u_request * request, struct _u_respo
   ulfius_log_message(ULFIUS_LOG_DEBUG, "basic auth password: %s", request->auth_basic_password);
   ulfius_log_message(ULFIUS_LOG_DEBUG, "basic auth param: %s", (char *)user_data);
   if (request->auth_basic_user != NULL && request->auth_basic_password != NULL && 
-      0 == o_strcmp(request->auth_basic_user, USER) && 0 == o_strcmp(request->auth_basic_password, PASSWORD)) {
+      0 == u_strcmp(request->auth_basic_user, USER) && 0 == u_strcmp(request->auth_basic_password, PASSWORD)) {
     return U_CALLBACK_CONTINUE;
   } else {
     ulfius_set_string_body_response(response, 401, "Error authentication");
@@ -105,8 +106,8 @@ int callback_auth_client_cert (const struct _u_request * request, struct _u_resp
   if (request->client_cert != NULL) {
     gnutls_x509_crt_get_dn(request->client_cert, NULL, &lbuf);
     gnutls_x509_crt_get_issuer_dn(request->client_cert, NULL, &libuf);
-    dn = o_malloc(lbuf + 1);
-    issuer_dn = o_malloc(libuf + 1);
+    dn = ulfius_malloc(lbuf + 1);
+    issuer_dn = ulfius_malloc(libuf + 1);
     if (dn != NULL && issuer_dn != NULL) {
       gnutls_x509_crt_get_dn(request->client_cert, dn, &lbuf);
       gnutls_x509_crt_get_issuer_dn(request->client_cert, issuer_dn, &libuf);
@@ -114,12 +115,12 @@ int callback_auth_client_cert (const struct _u_request * request, struct _u_resp
       issuer_dn[libuf] = '\0';
       ulfius_log_message(ULFIUS_LOG_DEBUG, "dn of the client: %s", dn);
       ulfius_log_message(ULFIUS_LOG_DEBUG, "dn of the issuer: %s", issuer_dn);
-      response_message = msprintf("client dn: '%s', ussued by: '%s'", dn, issuer_dn);
+      response_message = u_printf("client dn: '%s', ussued by: '%s'", dn, issuer_dn);
       ulfius_set_string_body_response(response, 200, response_message);
-      o_free(response_message);
+      u_free(response_message);
     }
-    o_free(dn);
-    o_free(issuer_dn);
+    u_free(dn);
+    u_free(issuer_dn);
   } else {
     ulfius_set_string_body_response(response, 400, "Invalid client certificate");
   }
@@ -163,9 +164,9 @@ int main (int argc, char **argv) {
     } else {
       printf("Error starting secure framework\n");
     }
-    o_free(server_key);
-    o_free(server_pem);
-    o_free(root_ca_pem);
+    u_free(server_key);
+    u_free(server_pem);
+    u_free(root_ca_pem);
   } else if (ulfius_start_framework(&instance) == U_OK) {
 #endif
     printf("Start framework on port %u\n", instance.port);

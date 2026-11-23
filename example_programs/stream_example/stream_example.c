@@ -11,6 +11,7 @@
  */
 
 #include <sys/stat.h>
+#include "u_string.h"
 #include <sys/types.h>
 
 #include <inttypes.h>
@@ -81,7 +82,7 @@ int main (int argc, char **argv) {
 int callback_get_stream (const struct _u_request * request, struct _u_response * response, void * user_data) {
   (void)(request);
   (void)(user_data);
-  ulfius_set_stream_response(response, 200, stream_data, free_stream_data, U_STREAM_SIZE_UNKNOWN, 32 * 1024, o_strdup("stream test"));
+  ulfius_set_stream_response(response, 200, stream_data, free_stream_data, U_STREAM_SIZE_UNKNOWN, 32 * 1024, u_strdup("stream test"));
   return U_CALLBACK_CONTINUE;
 }
 
@@ -118,7 +119,7 @@ ssize_t stream_data (void * cls, uint64_t pos, char * buf, size_t max) {
   sleep(1);
   if (pos <= 100) {
       snprintf(buf, max, "%s %" PRIu64 "\n", (char *)cls, pos);
-      return (ssize_t)o_strlen(buf);
+      return (ssize_t)u_strlen(buf);
   } else {
     return (ssize_t)U_STREAM_END;
   }
@@ -133,7 +134,7 @@ ssize_t stream_audio_file (void * cls, uint64_t pos, char * buf, size_t max) {
 
 void free_stream_data(void * cls) {
   printf("clean data\n");
-  o_free(cls);
+  u_free(cls);
 }
 
 void free_stream_audio_file(void * cls) {

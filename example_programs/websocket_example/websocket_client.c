@@ -11,6 +11,7 @@
  */
 
 #include <sys/stat.h>
+#include "u_string.h"
 #include <sys/types.h>
 
 #include <inttypes.h>
@@ -42,14 +43,14 @@ void websocket_manager_callback(const struct _u_request * request,
 
   // Send text message without fragmentation
   if (ulfius_websocket_wait_close(websocket_manager, 2000) == U_WEBSOCKET_STATUS_OPEN) {
-    if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen("Message without fragmentation from client"), "Message without fragmentation from client") != U_OK) {
+    if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen("Message without fragmentation from client"), "Message without fragmentation from client") != U_OK) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Error send message without fragmentation");
     }
   }
 
   // Send text message with fragmentation
   if (ulfius_websocket_wait_close(websocket_manager, 2000) == U_WEBSOCKET_STATUS_OPEN) {
-    if (ulfius_websocket_send_fragmented_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, o_strlen("Message with fragmentation from client"), "Message with fragmentation from client", 5) != U_OK) {
+    if (ulfius_websocket_send_fragmented_message(websocket_manager, U_WEBSOCKET_OPCODE_TEXT, u_strlen("Message with fragmentation from client"), "Message with fragmentation from client", 5) != U_OK) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Error send message with fragmentation");
     }
   }
@@ -63,7 +64,7 @@ void websocket_manager_callback(const struct _u_request * request,
 
   // Send binary message without fragmentation
   if (ulfius_websocket_wait_close(websocket_manager, 2000) == U_WEBSOCKET_STATUS_OPEN) {
-    if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_BINARY, o_strlen("Message without fragmentation from client"), "Message without fragmentation from client") != U_OK) {
+    if (ulfius_websocket_send_message(websocket_manager, U_WEBSOCKET_OPCODE_BINARY, u_strlen("Message without fragmentation from client"), "Message without fragmentation from client") != U_OK) {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Error send binary message without fragmentation");
     }
   }
@@ -110,7 +111,7 @@ void websocket_onclose_callback (const struct _u_request * request,
   (void)(websocket_manager);
   if (websocket_onclose_user_data != NULL) {
     ulfius_log_message(ULFIUS_LOG_DEBUG, "websocket_onclose_user_data is %s", (const char *)websocket_onclose_user_data);
-    o_free(websocket_onclose_user_data);
+    u_free(websocket_onclose_user_data);
   }
 }
 
@@ -118,8 +119,8 @@ int main(int argc, char ** argv) {
   struct _u_request request;
   struct _u_response response;
   struct _websocket_client_handler websocket_client_handler = {NULL, NULL};
-  char * websocket_user_data = o_strdup("my user data");
-  char * url = (argc>1&&0==o_strcmp("-https", argv[1]))?"wss://localhost:" PORT PREFIX_WEBSOCKET:"ws://localhost:" PORT PREFIX_WEBSOCKET;
+  char * websocket_user_data = u_strdup("my user data");
+  char * url = (argc>1&&0==u_strcmp("-https", argv[1]))?"wss://localhost:" PORT PREFIX_WEBSOCKET:"ws://localhost:" PORT PREFIX_WEBSOCKET;
 
   ulfius_set_log_callback(ULFIUS_LOG_DEBUG, u_example_log_callback, stdout);
   ulfius_log_message(ULFIUS_LOG_INFO, "%s", "Starting websocket_client");
@@ -135,11 +136,11 @@ int main(int argc, char ** argv) {
       ulfius_log_message(ULFIUS_LOG_DEBUG, "Websocket closed");
     } else {
       ulfius_log_message(ULFIUS_LOG_ERROR, "Error ulfius_open_websocket_client_connection");
-      o_free(websocket_user_data);
+      u_free(websocket_user_data);
     }
   } else {
     ulfius_log_message(ULFIUS_LOG_ERROR, "Error ulfius_set_websocket_request");
-    o_free(websocket_user_data);
+    u_free(websocket_user_data);
   }
 
   ulfius_clean_request(&request);

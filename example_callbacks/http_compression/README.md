@@ -22,3 +22,13 @@ config.allow_deflate = 1;
 
 ulfius_add_endpoint_by_val(&instance, "*", NULL, "*", 1000, &callback_http_compression, &config);
 ```
+
+## Build support
+
+Compile `src/u_string.c` and `src/u_token.c` from the matching Ulfius source
+release alongside this callback, with `include/` on the include path. A CMake
+installation also provides those sources and headers under
+`share/doc/ulfius/utility_support`; Make installs only the library and public
+headers. These private helpers use the library's public allocator and are not
+exported from `libulfius`. Do not compile a separate `u_memory.c`. Keep any
+additional dependencies documented for this callback.

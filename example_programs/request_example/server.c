@@ -12,6 +12,7 @@
  */
 
 #include <jansson.h>
+#include "u_string.h"
 #include <string.h>
 #include <ulfius.h>
 
@@ -32,20 +33,20 @@ char * print_map(const struct _u_map * map) {
     for (i=0; keys[i] != NULL; i++) {
       value = u_map_get(map, keys[i]);
       len = snprintf(NULL, 0, "key is %s, value is %s", keys[i], value);
-      line = o_malloc((size_t)(len+1));
+      line = ulfius_malloc((size_t)(len+1));
       snprintf(line, (size_t)(len+1), "key is %s, value is %s", keys[i], value);
       if (to_return != NULL) {
-        len = (int)(o_strlen(to_return) + o_strlen(line) + 1);
-        to_return = o_realloc(to_return, (size_t)(len+1));
-        if (o_strlen(to_return) > 0) {
+        len = (int)(u_strlen(to_return) + u_strlen(line) + 1);
+        to_return = ulfius_realloc(to_return, (size_t)(len+1));
+        if (u_strlen(to_return) > 0) {
           strcat(to_return, "\n");
         }
       } else {
-        to_return = o_malloc((o_strlen(line) + 1));
+        to_return = ulfius_malloc((u_strlen(line) + 1));
         to_return[0] = 0;
       }
       strcat(to_return, line);
-      o_free(line);
+      u_free(line);
     }
     return to_return;
   } else {
@@ -60,9 +61,9 @@ int callback (const struct _u_request * request, struct _u_response * response, 
   char * url_params = print_map(request->map_url), * headers = print_map(request->map_header), * cookies = print_map(request->map_cookie), 
         * post_params = print_map(request->map_post_body);
   char request_body[request->binary_body_length + 1];
-  o_strncpy(request_body, (const char *)request->binary_body, request->binary_body_length);
+  u_strncpy(request_body, (const char *)request->binary_body, request->binary_body_length);
   request_body[request->binary_body_length] = '\0';
-  if (o_strstr(request->http_url, "limit") != NULL) {
+  if (u_strstr(request->http_url, "limit") != NULL) {
     ulfius_set_string_body_response(response, 200, "This is a large body response that should be truncated by the client");
   } else {
     ulfius_set_string_body_response(response, 200, "ok");
@@ -74,10 +75,10 @@ int callback (const struct _u_request * request, struct _u_response * response, 
   ulfius_add_cookie_to_response(response, "cook", "ie", NULL, 5000, NULL, NULL, 0, 0);
   u_map_put(response->map_header, "multiple-key", "value 1");
   u_map_put(response->map_header, "Multiple-Key", "value 2");
-  o_free(url_params);
-  o_free(headers);
-  o_free(cookies);
-  o_free(post_params);
+  u_free(url_params);
+  u_free(headers);
+  u_free(cookies);
+  u_free(post_params);
   return U_CALLBACK_CONTINUE;
 }
 
