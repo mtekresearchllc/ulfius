@@ -177,7 +177,7 @@ static int ulfius_websocket_send_frame(struct _websocket_manager * websocket_man
                 if (now.tv_sec - last_progress.tv_sec > U_WEBSOCKET_WRITE_IDLE_SECONDS ||
                     (now.tv_sec - last_progress.tv_sec == U_WEBSOCKET_WRITE_IDLE_SECONDS &&
                      now.tv_nsec >= last_progress.tv_nsec)) {
-                        reason = "no write progress for 10 seconds";
+                        reason = "no write progress for " STR(U_WEBSOCKET_WRITE_IDLE_SECONDS) " seconds";
                         break;
                 }
                 attempted = 1;
