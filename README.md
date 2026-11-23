@@ -1,12 +1,9 @@
 # Ulfius HTTP Framework
 
-## NOTICE: This project is no longer being maintained. ⚠️
-
-This project is now closed for me, I have no time nor motivation to maintain it, so I prefer to close this repository.
-
-![.github/workflows/ccpp.yml](https://github.com/babelouest/ulfius/workflows/.github/workflows/ccpp.yml/badge.svg)
-![CodeQL](https://github.com/babelouest/ulfius/workflows/CodeQL/badge.svg)
-[![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/3195/badge)](https://bestpractices.coreinfrastructure.org/projects/3195)
+This repository is the MTEK Research continuation of Ulfius, a C HTTP and
+WebSocket framework. Contributions and bug reports are welcome through this
+repository's [issues](https://github.com/mtekresearchllc/ulfius/issues) and
+[pull requests](https://github.com/mtekresearchllc/ulfius/pulls).
 
 HTTP Framework for REST Applications in C.
 
@@ -95,7 +92,7 @@ int main(void) {
 
 - Create websocket client application
 
-- CLI to connect to a remote websocket: [uwsc](https://github.com/babelouest/ulfius/tree/master/tools/uwsc)
+- CLI to connect to a remote websocket: [uwsc](tools/uwsc)
 
 ## Installation
 
@@ -105,15 +102,17 @@ See [INSTALL.md](INSTALL.md) file for installation details
 
 See [API.md](API.md) file for API documentation details
 
-See the [online documentation](https://babelouest.github.io/ulfius/) for a doxygen format of the API documentation.
+The [original upstream documentation](https://babelouest.github.io/ulfius/)
+is also available in Doxygen format. It may not reflect changes in this
+continuation; consult [API.md](API.md) for the documentation in this repository.
 
 ## Example programs source code
 
-Example programs are available to understand the different functionalities available, see [example_programs](https://github.com/babelouest/ulfius/blob/master/example_programs) folder for detailed sample source codes and documentation.
+Example programs are available to understand the different functionalities available, see [example_programs](example_programs) folder for detailed sample source codes and documentation.
 
 ## Example callback functions
 
-Example callback functions are available in the folder [example_callbacks](https://github.com/babelouest/ulfius/blob/master/example_callbacks). The example callback functions available are:
+Example callback functions are available in the folder [example_callbacks](example_callbacks). The example callback functions available are:
 - static file server: to provide static files of a specific folder
 - oauth2 bearer: to check the validity of a Oauth2 bearer jwt token. Requires [libjwt](https://github.com/benmcollins/libjwt).
 
@@ -126,6 +125,21 @@ Example callback functions are available in the folder [example_callbacks](https
 - [Taliesin](https://github.com/babelouest/taliesin), a lightweight audio streaming server
 - [Taulas Raspberry Pi Serial interface](https://github.com/babelouest/taulas/tree/master/taulas_raspberrypi_serial), an interface for Arduino devices that implement [Taulas](https://github.com/babelouest/taulas/) protocol, a house automation protocol for Angharad
 
-## Questions, problems ?
+## Questions and contributions
 
-I'm open for questions and suggestions, feel free to open an [issue](https://github.com/babelouest/ulfius/issues), a [pull request](https://github.com/babelouest/ulfius/pulls) or send me an [e-mail](mailto:mail@babelouest.io) if you feel like it!
+Please open an [issue](https://github.com/mtekresearchllc/ulfius/issues) or a
+[pull request](https://github.com/mtekresearchllc/ulfius/pulls) in this repository.
+
+## Attribution and license
+
+Ulfius was created and originally maintained by
+[Nicolas Mora (babelouest)](https://github.com/babelouest), with contributions
+from the original project's community. We thank Nicolas and those contributors
+for building and maintaining the framework.
+
+This continuation preserves the history and attribution of the
+[original Ulfius repository](https://github.com/babelouest/ulfius), which was
+archived in November 2026. MTEK Research maintains this continuation independently.
+
+Ulfius remains licensed under the [GNU Lesser General Public License,
+version 2.1](LICENSE). Existing copyright and license notices are retained.
