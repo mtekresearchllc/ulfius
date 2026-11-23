@@ -20,7 +20,7 @@
 #
 PROJECT_NAME=ulfius
 PROJECT_DESCRIPTION=Web Framework to build REST APIs, Webservices or any HTTP endpoint in C language. Can stream large amount of data, integrate JSON data with Jansson, and create websocket services
-PROJECT_BUGREPORT_PATH=https://github.com/babelouest/ulfius/issues
+PROJECT_BUGREPORT_PATH=https://github.com/mtekresearchllc/ulfius/issues
 PKGCONF_REQ=
 PKGCONF_REQ_PRIVATE=
 ULFIUS_INCLUDE=../include

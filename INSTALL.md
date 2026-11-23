@@ -46,7 +46,7 @@ Download Orcania, Yder and Ulfius source code from GitHub, compile and install O
 
 Last Orcania release: [https://github.com/babelouest/orcania/releases/latest/](https://github.com/babelouest/orcania/releases/latest/)
 Last Yder release: [https://github.com/babelouest/yder/releases/latest/](t/](https://github.com/babelouest/orcania/releases/latest/)
-Last Ulfius release: [https://github.com/babelouest/ulfius/releases/latest/](https://github.com/babelouest/ulfius/releases/latest/)
+Last Ulfius release: [https://github.com/mtekresearchllc/ulfius/releases/latest/](https://github.com/mtekresearchllc/ulfius/releases/latest/)
 
 **Note: Make sure all the previous installed version of those libraries, via a package manager for example, are removed.**
 
@@ -181,6 +181,6 @@ The available options for CMake are:
 - `-DBUILD_ULFIUS_DOCUMENTATION=[on|off]` (default `off`): Build the documentation when running `make doc`, doxygen is required
 - `-DINSTALL_HEADER=[on|off]` (default `on`): Install header file `ulfius.h`
 - `-DBUILD_TGZ=[on|off]` (default `off`): Build tar.gz package when running `make package`
-- `-DBUILD_DEB=[on|off]` (default `off`): Build DEB package when running `make package`
+- `-DBUILD_DEB=[on|off]` (default `off`): Build a local CPack DEB package when running `make package`. Requires `-DCPACK_DEBIAN_PACKAGE_MAINTAINER="Name <email>"` with the package builder's real contact. These convenience packages are distinct from Debian's distribution-maintained packages.
 - `-DBUILD_RPM=[on|off]` (default `off`): Build RPM package when running `make package`
 - `-DCMAKE_BUILD_TYPE=[Debug|Release]` (default `Release`): Compile with debugging symbols or not

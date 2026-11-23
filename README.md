@@ -116,9 +116,13 @@ See [INSTALL.md](INSTALL.md) file for installation details
 
 See [API.md](API.md) file for API documentation details
 
+The [Ulfius reference documentation](https://mtekresearchllc.github.io/ulfius/)
+is published for this continuation. See its version label when comparing it
+with the source you use.
+
 The [original upstream documentation](https://babelouest.github.io/ulfius/)
-is also available in Doxygen format. It may not reflect changes in this
-continuation; consult [API.md](API.md) for the documentation in this repository.
+remains available as a historical reference; it does not include this
+continuation's changes.
 
 ## Example programs source code
 
@@ -143,6 +147,9 @@ Example callback functions are available in the folder [example_callbacks](examp
 
 Please open an [issue](https://github.com/mtekresearchllc/ulfius/issues) or a
 [pull request](https://github.com/mtekresearchllc/ulfius/pulls) in this repository.
+
+For security vulnerabilities, follow [SECURITY.md](SECURITY.md) instead of
+opening a public issue.
 
 ## Attribution and license
 
