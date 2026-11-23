@@ -31,7 +31,8 @@ jobs:
       - name: Check legacy MHD ownership with sanitizers
         run: |
           gcc -std=gnu99 -Wall -Wextra -Werror -g -fno-omit-frame-pointer \
-            -fsanitize=address,undefined -DU_TEST_MHD_AUTH_FREE -Iinclude \
+            -fsanitize=address,undefined -fno-sanitize-recover=undefined \
+            -DU_TEST_MHD_AUTH_FREE -Iinclude \
             test/memory_mhd.c src/u_mhd.c src/u_string.c src/u_memory.c \
             -pthread -o "$RUNNER_TEMP/memory-mhd-legacy"
           ASAN_OPTIONS=detect_leaks=1 "$RUNNER_TEMP/memory-mhd-legacy"

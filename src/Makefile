@@ -184,7 +184,7 @@ $(PKGCONFIG_FILE):
 
 target: $(OBJECTS)
 
-%.o: %.c $(CONFIG_FILE) $(ULFIUS_INCLUDE)/ulfius.h $(ULFIUS_INCLUDE)/u_private.h $(ULFIUS_INCLUDE)/yuarel.h $(ULFIUS_INCLUDE)/u_logging.h
+%.o: %.c $(CONFIG_FILE) $(wildcard $(ULFIUS_INCLUDE)/*.h)
 	$(CC) $(CFLAGS) $<
 
 libulfius.so: $(OBJECTS) $(PKGCONFIG_FILE)

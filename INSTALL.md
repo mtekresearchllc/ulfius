@@ -111,7 +111,8 @@ Legacy Make builds used the unversioned SONAME `libulfius.so`; keeping their rea
 `libulfius.so.2.7.x` file in the installation directory lets a later `ldconfig`
 restore the linker name to that old library. Merely replacing the symlink is not
 sufficient. Confirm the old Make-built file is removed before installing 3.0,
-then rebuild and migrate all consumers to the new logging API. Old binaries with
+then rebuild and migrate all consumers to the new logging API and allocator
+hooks described in API.md under Memory management. Old binaries with
 `NEEDED libulfius.so` cannot safely share that installation with 3.0.
 
 CMake/distribution 2.7 libraries with SONAME `libulfius.so.2.7` do not have this
