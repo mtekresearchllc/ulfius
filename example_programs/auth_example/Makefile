@@ -17,11 +17,8 @@ ULFIUS_LOCATION=../../src
 ULFIUS_INCLUDE=../../include
 EXAMPLE_INCLUDE=../include
 CFLAGS+=-c -Wall -I$(ULFIUS_INCLUDE) -I$(EXAMPLE_INCLUDE) -D_REENTRANT $(ADDITIONALFLAGS) $(CPPFLAGS)
-LIBS=-lc -lgnutls -lulfius -lorcania -L$(ULFIUS_LOCATION)
+LIBS=u_example.o -lc -lgnutls -lulfius -lorcania -L$(ULFIUS_LOCATION)
 
-ifndef YDERFLAG
-LIBS+= -lyder
-endif
 
 all: auth_client auth_server
 
@@ -38,7 +35,7 @@ debug: auth_client auth_server
 auth_client.o: auth_client.c ../../src/libulfius.so
 	$(CC) $(CFLAGS) auth_client.c -DDEBUG -g -O0
 
-auth_client: auth_client.o
+auth_client: auth_client.o u_example.o
 	$(CC) -o auth_client auth_client.o $(LIBS)
 
 test_auth_client: auth_client
@@ -47,8 +44,11 @@ test_auth_client: auth_client
 auth_server.o: auth_server.c ../../src/libulfius.so
 	$(CC) $(CFLAGS) auth_server.c -DDEBUG -g -O0
 
-auth_server: auth_server.o
+auth_server: auth_server.o u_example.o
 	$(CC) -o auth_server auth_server.o $(LIBS)
 
 test_auth_server: auth_server
 	LD_LIBRARY_PATH=$(ULFIUS_LOCATION):${LD_LIBRARY_PATH} ./auth_server
+
+u_example.o: ../u_example.c ../include/u_example.h
+	$(CC) $(CFLAGS) ../u_example.c -o $@

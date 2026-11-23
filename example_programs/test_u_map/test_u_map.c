@@ -87,14 +87,15 @@ int put_file_content_in_map (struct _u_map * map, const char * file_path, uint64
 }
 
 int main (void) {
-    y_init_logs("test_u_map", Y_LOG_MODE_CONSOLE, Y_LOG_LEVEL_DEBUG, NULL, "Starting test_u_map");
+    ulfius_set_log_callback(ULFIUS_LOG_DEBUG, u_example_log_callback, stdout);
+  ulfius_log_message(ULFIUS_LOG_INFO, "%s", "Starting test_u_map");
     struct _u_map map, * map_copy;
     char * print, * print_copy;
     
     u_map_init(&map);
     
     print = print_map(&map);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 1, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 1, map is\n%s\n", print);
     o_free(print);
     
     u_map_put(&map, "key1", "value1");
@@ -102,13 +103,13 @@ int main (void) {
     u_map_put(&map, "key3", "value3");
     
     print = print_map(&map);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 2, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 2, map is\n%s\n", print);
     o_free(print);
     
     u_map_put(&map, "key2", "value4");
     
     print = print_map(&map);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 3, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 3, map is\n%s\n", print);
     o_free(print);
     
     map_copy = u_map_copy(&map);
@@ -116,92 +117,92 @@ int main (void) {
     
     print = print_map(&map);
     print_copy = print_map(map_copy);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 4, map is\n%s\nmap_copy is\n%s\n", print, print_copy);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 4, map is\n%s\nmap_copy is\n%s\n", print, print_copy);
     o_free(print);
     o_free(print_copy);
     
     u_map_remove_at(&map, 2);
     
     print = print_map(&map);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 5: remove item 2 from map, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 5: remove item 2 from map, map is\n%s\n", print);
     o_free(print);
     
     u_map_remove_from_key(map_copy, "key1");
     
     print = print_map(map_copy);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 6: remove key:key1 from map_copy, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 6: remove key:key1 from map_copy, map is\n%s\n", print);
     o_free(print);
     
     u_map_remove_from_key(map_copy, "key_nope");
     
     print = print_map(map_copy);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 7: remove key:key_nope from map_copy, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 7: remove key:key_nope from map_copy, map is\n%s\n", print);
     o_free(print);
     
     u_map_remove_from_key_case(map_copy, "Key2");
     
     print = print_map(map_copy);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 8: remove case key:Key2 from map_copy, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 8: remove case key:Key2 from map_copy, map is\n%s\n", print);
     o_free(print);
     
     u_map_remove_from_value(map_copy, "value3");
     
     print = print_map(map_copy);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 9: remove value:value3 from map_copy, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 9: remove value:value3 from map_copy, map is\n%s\n", print);
     o_free(print);
     
     u_map_remove_from_value_case(map_copy, "Value5");
     
     print = print_map(map_copy);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 10: remove case value:Value5 from map_copy, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 10: remove case value:Value5 from map_copy, map is\n%s\n", print);
     o_free(print);
     
-    y_log_message(Y_LOG_LEVEL_DEBUG, "map has key key1? %d", u_map_has_key(&map, "key1"));
-    y_log_message(Y_LOG_LEVEL_DEBUG, "map has key key_nope? %d", u_map_has_key(&map, "key_nope"));
-    y_log_message(Y_LOG_LEVEL_DEBUG, "map has key Key1? %d", u_map_has_key(&map, "Key1"));
-    y_log_message(Y_LOG_LEVEL_DEBUG, "map has key Key1 (no case) ? %d", u_map_has_key_case(&map, "Key1"));
-    y_log_message(Y_LOG_LEVEL_DEBUG, "map has key Key_nope (no case) ? %d", u_map_has_key_case(&map, "Key_nope"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "map has key key1? %d", u_map_has_key(&map, "key1"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "map has key key_nope? %d", u_map_has_key(&map, "key_nope"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "map has key Key1? %d", u_map_has_key(&map, "Key1"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "map has key Key1 (no case) ? %d", u_map_has_key_case(&map, "Key1"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "map has key Key_nope (no case) ? %d", u_map_has_key_case(&map, "Key_nope"));
     
-    y_log_message(Y_LOG_LEVEL_DEBUG, "map has value value1? %d", u_map_has_value(&map, "value1"));
-    y_log_message(Y_LOG_LEVEL_DEBUG, "map has value value_nope? %d", u_map_has_value(&map, "value_nope"));
-    y_log_message(Y_LOG_LEVEL_DEBUG, "map has value Value1? %d", u_map_has_value(&map, "Value1"));
-    y_log_message(Y_LOG_LEVEL_DEBUG, "map has value Value1 (no case) ? %d", u_map_has_value_case(&map, "Value1"));
-    y_log_message(Y_LOG_LEVEL_DEBUG, "map has value Value_nope (no case) ? %d", u_map_has_value_case(&map, "Value_nope"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "map has value value1? %d", u_map_has_value(&map, "value1"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "map has value value_nope? %d", u_map_has_value(&map, "value_nope"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "map has value Value1? %d", u_map_has_value(&map, "Value1"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "map has value Value1 (no case) ? %d", u_map_has_value_case(&map, "Value1"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "map has value Value_nope (no case) ? %d", u_map_has_value_case(&map, "Value_nope"));
     
-    y_log_message(Y_LOG_LEVEL_DEBUG, "get value from key key1: %s", u_map_get(&map, "key1"));
-    y_log_message(Y_LOG_LEVEL_DEBUG, "get value from key key_nope: %s", u_map_get(&map, "key_nope"));
-    y_log_message(Y_LOG_LEVEL_DEBUG, "get value from key Key1 (no case): %s", u_map_get_case(&map, "Key1"));
-    y_log_message(Y_LOG_LEVEL_DEBUG, "get value from key Key_nope (no case): %s", u_map_get_case(&map, "Key_nope"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "get value from key key1: %s", u_map_get(&map, "key1"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "get value from key key_nope: %s", u_map_get(&map, "key_nope"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "get value from key Key1 (no case): %s", u_map_get_case(&map, "Key1"));
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "get value from key Key_nope (no case): %s", u_map_get_case(&map, "Key_nope"));
     
     put_file_content_in_map(&map, "../sheep_counter/static/sheep.png", 0);
     
     print = print_map(&map);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 11, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 11, map is\n%s\n", print);
     o_free(print);
     
     u_map_remove_from_key(&map, "../sheep_counter/static/sheep.png");
     put_file_content_in_map(&map, "Makefile", 0);
     
     print = print_map(&map);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 12, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 12, map is\n%s\n", print);
     o_free(print);
     
     u_map_put_binary(&map, "Makefile", "Replace the first characters", 0, o_strlen("Replace the first characters"));
     
     print = print_map(&map);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 12, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 12, map is\n%s\n", print);
     o_free(print);
     
     u_map_put_binary(&map, "Makefile", "Append at the end of the value", (uint64_t)u_map_get_length(&map, "Makefile"), o_strlen("Append at the end of the value"));
     
     print = print_map(&map);
-    y_log_message(Y_LOG_LEVEL_DEBUG, "iteration 12, map is\n%s\n", print);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "iteration 12, map is\n%s\n", print);
     o_free(print);
     
     u_map_clean(&map);
     u_map_clean_full(map_copy);
     
-    y_close_logs();
+    ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL);
     
     return 0;
 }

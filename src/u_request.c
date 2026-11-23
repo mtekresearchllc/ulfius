@@ -50,12 +50,12 @@ static char ** ulfius_split_url(const char * prefix, const char * url) {
       while (cur_word != NULL) {
         to_return = o_realloc(to_return, (counter+1)*sizeof(char*));
         if (to_return == NULL) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for ulfius_split_url.to_return");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for ulfius_split_url.to_return");
           break;
         }
         to_return[counter-1] = o_strdup(cur_word);
         if (to_return[counter-1] == NULL) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for ulfius_split_url.to_return[counter-1]");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for ulfius_split_url.to_return[counter-1]");
           break;
         }
         to_return[counter] = NULL;
@@ -72,12 +72,12 @@ static char ** ulfius_split_url(const char * prefix, const char * url) {
         if (0 != o_strcmp("", cur_word) && cur_word[0] != '?') {
           to_return = o_realloc(to_return, (counter+1)*sizeof(char*));
           if (to_return == NULL) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for ulfius_split_url.to_return");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for ulfius_split_url.to_return");
             break;
           }
           to_return[counter-1] = o_strdup(cur_word);
           if (to_return[counter-1] == NULL) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for ulfius_split_url.to_return[counter-1]");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for ulfius_split_url.to_return[counter-1]");
             break;
           }
           to_return[counter] = NULL;
@@ -89,7 +89,7 @@ static char ** ulfius_split_url(const char * prefix, const char * url) {
       url_cpy_addr = NULL;
     }
   } else {
-    y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for ulfius_split_url.to_return");
+    ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for ulfius_split_url.to_return");
   }
   return to_return;
 }
@@ -143,7 +143,7 @@ struct _u_endpoint ** ulfius_endpoint_match(const char * method, const char * ur
   size_t count = 0;
 
   if (endpoint_returned == NULL) {
-    y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for endpoint_returned");
+    ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for endpoint_returned");
   } else {
     endpoint_returned[0] = NULL;
     if (method != NULL && url != NULL && endpoint_list != NULL) {
@@ -157,14 +157,14 @@ struct _u_endpoint ** ulfius_endpoint_match(const char * method, const char * ur
               endpoint_returned[count] = o_malloc(sizeof(struct _u_endpoint));
               if (endpoint_returned[count] != NULL) {
                 if (ulfius_copy_endpoint(endpoint_returned[count], (endpoint_list + i)) != U_OK) {
-                  y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error ulfius_copy_endpoint for endpoint_returned[%zu]", count);
+                  ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error ulfius_copy_endpoint for endpoint_returned[%zu]", count);
                 }
               } else {
-                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for endpoint_returned[%zu]", count);
+                ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for endpoint_returned[%zu]", count);
               }
               endpoint_returned[count + 1] = NULL;
             } else {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error reallocating memory for endpoint_returned");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error reallocating memory for endpoint_returned");
             }
             count++;
             u_map_clean_enum(splitted_url_format);
@@ -202,7 +202,7 @@ int ulfius_parse_url(const char * url, const struct _u_endpoint * endpoint, stru
     url_format_cpy = url_format_cpy_addr = o_strdup(endpoint->url_prefix);
     cur_word = ulfius_url_decode(strtok_r( url_cpy, ULFIUS_URL_SEPARATOR, &saveptr ));
     if (endpoint->url_prefix != NULL && url_format_cpy == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for url_format_cpy");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for url_format_cpy");
     } else if (url_format_cpy != NULL) {
       cur_word_format = strtok_r( url_format_cpy, ULFIUS_URL_SEPARATOR, &saveptr_prefix );
     }
@@ -216,7 +216,7 @@ int ulfius_parse_url(const char * url, const struct _u_endpoint * endpoint, stru
 
     url_format_cpy = url_format_cpy_addr = o_strdup(endpoint->url_format);
     if (endpoint->url_format != NULL && url_format_cpy == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for url_format_cpy");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for url_format_cpy");
       return U_ERROR_MEMORY;
     } else if (url_format_cpy != NULL) {
       cur_word_format = strtok_r( url_format_cpy, ULFIUS_URL_SEPARATOR, &saveptr_format );
@@ -226,7 +226,7 @@ int ulfius_parse_url(const char * url, const struct _u_endpoint * endpoint, stru
         if (u_map_has_key(map, cur_word_format+1)) {
           concat_url_param = msprintf("%s,%s", u_map_get(map, cur_word_format+1), cur_word);
           if (concat_url_param == NULL) {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating resources for concat_url_param");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating resources for concat_url_param");
             o_free(url_cpy_addr);
             o_free(url_format_cpy_addr);
             return U_ERROR_MEMORY;
@@ -274,7 +274,7 @@ int ulfius_init_request(struct _u_request * request) {
     request->map_post_body = o_malloc(sizeof(struct _u_map));
     if (request->map_post_body == NULL || request->map_cookie == NULL ||
         request->map_url == NULL || request->map_header == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for request->map*");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for request->map*");
       ulfius_clean_request(request);
       return U_ERROR_MEMORY;
     }
@@ -404,48 +404,48 @@ int ulfius_copy_request(struct _u_request * dest, const struct _u_request * sour
       if (dest->client_address != NULL) {
         memcpy(dest->client_address, source->client_address, sizeof(struct sockaddr));
       } else {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating resources for dest->client_address");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating resources for dest->client_address");
         ret = U_ERROR_MEMORY;
       }
     }
 
     if (ret == U_OK && u_map_clean(dest->map_url) == U_OK && u_map_init(dest->map_url) == U_OK) {
       if (u_map_copy_into(dest->map_url, source->map_url) != U_OK) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error u_map_copy_into dest->map_url");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error u_map_copy_into dest->map_url");
         ret = U_ERROR;
       }
     } else if (ret == U_OK) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error reinit dest->map_url");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error reinit dest->map_url");
       ret = U_ERROR_MEMORY;
     }
 
     if (ret == U_OK && u_map_clean(dest->map_header) == U_OK && u_map_init(dest->map_header) == U_OK) {
       if (u_map_copy_into(dest->map_header, source->map_header) != U_OK) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error u_map_copy_into dest->map_header");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error u_map_copy_into dest->map_header");
         ret = U_ERROR;
       }
     } else if (ret == U_OK) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error reinit dest->map_header");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error reinit dest->map_header");
       ret = U_ERROR_MEMORY;
     }
 
     if (ret == U_OK && u_map_clean(dest->map_cookie) == U_OK && u_map_init(dest->map_cookie) == U_OK) {
       if (u_map_copy_into(dest->map_cookie, source->map_cookie) != U_OK) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error u_map_copy_into dest->map_cookie");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error u_map_copy_into dest->map_cookie");
         ret = U_ERROR;
       }
     } else if (ret == U_OK) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error reinit dest->map_cookie");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error reinit dest->map_cookie");
       ret = U_ERROR_MEMORY;
     }
 
     if (ret == U_OK && u_map_clean(dest->map_post_body) == U_OK && u_map_init(dest->map_post_body) == U_OK) {
       if (u_map_copy_into(dest->map_post_body, source->map_post_body) != U_OK) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error u_map_copy_into dest->map_post_body");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error u_map_copy_into dest->map_post_body");
         ret = U_ERROR;
       }
     } else if (ret == U_OK) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error reinit dest->map_post_body");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error reinit dest->map_post_body");
       ret = U_ERROR_MEMORY;
     }
 
@@ -456,7 +456,7 @@ int ulfius_copy_request(struct _u_request * dest, const struct _u_request * sour
         if (dest->binary_body != NULL) {
           memcpy(dest->binary_body, source->binary_body, source->binary_body_length);
         } else {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating resources for dest->binary_body");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating resources for dest->binary_body");
           ret = U_ERROR_MEMORY;
         }
       }
@@ -470,12 +470,12 @@ int ulfius_copy_request(struct _u_request * dest, const struct _u_request * sour
       if (gnutls_x509_crt_init(&dest->client_cert) == 0) {
         char * str_cert = ulfius_export_client_certificate_pem(source);
         if (ulfius_import_client_certificate_pem(dest, str_cert) != U_OK) {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error ulfius_import_client_certificate_pem");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error ulfius_import_client_certificate_pem");
           ret = U_ERROR;
         }
         o_free(str_cert);
       } else {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error gnutls_x509_crt_init");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error gnutls_x509_crt_init");
         ret = U_ERROR;
       }
     }
@@ -689,7 +689,7 @@ int ulfius_set_request_properties(struct _u_request * request, ...) {
     }
     va_end(vl);
   } else {
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Ulfius - Error input parameter");
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "Ulfius - Error input parameter");
     ret = U_ERROR_PARAMS;
   }
   return ret;
@@ -707,7 +707,7 @@ int ulfius_set_string_body_request(struct _u_request * request, const char * str
     o_free(request->binary_body);
     request->binary_body = (unsigned char *)o_strdup(string_body);
     if (request->binary_body == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for request->binary_body");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for request->binary_body");
       return U_ERROR_MEMORY;
     } else {
       request->binary_body_length = o_strlen(string_body);
@@ -732,7 +732,7 @@ int ulfius_set_binary_body_request(struct _u_request * request, const char * bin
 
     request->binary_body = o_malloc(length);
     if (request->binary_body == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for request->binary_body");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for request->binary_body");
       return U_ERROR_MEMORY;
     }
     memcpy(request->binary_body, binary_body, length);
@@ -769,22 +769,22 @@ struct _u_request * ulfius_duplicate_request(const struct _u_request * request) 
   if (request != NULL) {
     new_request = o_malloc(sizeof(struct _u_request));
     if (new_request == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for new_request");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for new_request");
       return NULL;
     }
     if (ulfius_init_request(new_request) == U_OK) {
       if (ulfius_copy_request(new_request, request) != U_OK) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error ulfius_copy_request");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error ulfius_copy_request");
         ulfius_clean_request_full(new_request);
         new_request = NULL;
       }
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error ulfius_init_request");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error ulfius_init_request");
       o_free(new_request);
       new_request = NULL;
     }
   } else {
-    y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error source request is NULL");
+    ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error source request is NULL");
   }
   return new_request;
 }
@@ -824,7 +824,7 @@ char * ulfius_export_request_http(const struct _u_request * request) {
                 }
                 o_free(value_esc);
               } else {
-                y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error ulfius_url_encode for url parameter value %s=%s", keys[i], value);
+                ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error ulfius_url_encode for url parameter value %s=%s", keys[i], value);
               }
             } else {
               if (!has_params) {
@@ -836,7 +836,7 @@ char * ulfius_export_request_http(const struct _u_request * request) {
             }
             o_free(key_esc);
           } else {
-            y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error ulfius_url_encode for url key %s", keys[i]);
+            ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error ulfius_url_encode for url key %s", keys[i]);
           }
         }
       }
@@ -876,7 +876,7 @@ char * ulfius_export_request_http(const struct _u_request * request) {
               out = mstrcatf(out, "Cookie: %s=%s\r\n", keys[i], value_esc);
               o_free(value_esc);
             } else {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error ulfius_url_encode for cookie parameter value %s=%s", keys[i], value);
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error ulfius_url_encode for cookie parameter value %s=%s", keys[i], value);
             }
           } else {
             out = mstrcatf(out, "Cookie: %s\r\n", keys[i]);
@@ -895,7 +895,7 @@ char * ulfius_export_request_http(const struct _u_request * request) {
           out = mstrcatf(out, "Authorization: Basic %.*s\r\n", (int)dat.size, dat.data);
           o_free(dat.data);
         } else {
-          y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error o_base64_encode_alloc");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error o_base64_encode_alloc");
         }
         o_free(auth_basic);
       }
@@ -923,14 +923,14 @@ char * ulfius_export_request_http(const struct _u_request * request) {
                   body = mstrcatf(body, "%s=%s", key_esc, value_esc);
                   o_free(value_esc);
                 } else {
-                  y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error ulfius_url_encode for post parameter value %s=%s", key_esc, value);
+                  ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error ulfius_url_encode for post parameter value %s=%s", key_esc, value);
                 }
               } else {
                 body = mstrcatf(body, "%c%s", fp, keys[i]);
               }
               o_free(key_esc);
             } else {
-              y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error ulfius_url_encode for post parameter key %s", keys[i]);
+              ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error ulfius_url_encode for post parameter key %s", keys[i]);
             }
           }
           out = mstrcatf(out, "Content-Length: %zu\r\n", o_strlen(body));
@@ -959,7 +959,7 @@ int ulfius_set_json_body_request(struct _u_request * request, json_t * j_body) {
 
     request->binary_body = (void*) json_dumps(j_body, JSON_COMPACT);
     if (request->binary_body == NULL) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error allocating memory for request->binary_body");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error allocating memory for request->binary_body");
       return U_ERROR_MEMORY;
     }
     request->binary_body_length = o_strlen((char*)request->binary_body);
@@ -1015,7 +1015,7 @@ char * ulfius_export_client_certificate_pem(const struct _u_request * request) {
       str_cert = o_strndup((const char *)g_cert.data, g_cert.size);
       gnutls_free(g_cert.data);
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error gnutls_x509_crt_export2: %s", gnutls_strerror(ret));
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error gnutls_x509_crt_export2: %s", gnutls_strerror(ret));
     }
   }
 
@@ -1037,12 +1037,12 @@ int ulfius_import_client_certificate_pem(struct _u_request * request, const char
     g_cert.data = (unsigned char *)str_cert;
     g_cert.size = (unsigned int)o_strlen(str_cert);
     if ((res = gnutls_x509_crt_init(&request->client_cert))) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error gnutls_x509_crt_init: %s", gnutls_strerror(res));
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error gnutls_x509_crt_init: %s", gnutls_strerror(res));
       ret = U_ERROR;
     } else if ((res = gnutls_x509_crt_import(request->client_cert, &g_cert, GNUTLS_X509_FMT_PEM)) >= 0) {
       ret = U_OK;
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Ulfius - Error gnutls_x509_crt_import: %s", gnutls_strerror(res));
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Ulfius - Error gnutls_x509_crt_import: %s", gnutls_strerror(res));
       ret = U_ERROR;
     }
   } else {

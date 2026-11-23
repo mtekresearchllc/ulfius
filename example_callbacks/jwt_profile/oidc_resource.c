@@ -272,69 +272,69 @@ json_t * verify_dpop_proof(const struct _u_request * request, const char * htm, 
         if (r_jwt_verify_signature(dpop_jwt, NULL, R_FLAG_IGNORE_REMOTE) == RHN_OK) {
           do {
             if (0 != o_strcmp("dpop+jwt", r_jwt_get_header_str_value(dpop_jwt, "typ"))) {
-              y_log_message(Y_LOG_LEVEL_DEBUG, "verify_dpop_proof - Invalid typ");
+              ulfius_log_message(ULFIUS_LOG_DEBUG, "verify_dpop_proof - Invalid typ");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR_INVALID_TOKEN);
               break;
             }
             if ((alg = r_jwt_get_sign_alg(dpop_jwt)) != R_JWA_ALG_RS256 && alg != R_JWA_ALG_RS384 && alg != R_JWA_ALG_RS512 &&
                 alg != R_JWA_ALG_ES256 && alg != R_JWA_ALG_ES384 && alg != R_JWA_ALG_ES512 && alg != R_JWA_ALG_EDDSA && alg != R_JWA_ALG_ES256K) {
-              y_log_message(Y_LOG_LEVEL_DEBUG, "verify_dpop_proof - Invalid sign_alg");
+              ulfius_log_message(ULFIUS_LOG_DEBUG, "verify_dpop_proof - Invalid sign_alg");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR_INVALID_TOKEN);
               break;
             }
             if ((j_header = r_jwt_get_full_header_json_t(dpop_jwt)) == NULL) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "verify_dpop_proof - Error r_jwt_get_full_header_json_t");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "verify_dpop_proof - Error r_jwt_get_full_header_json_t");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR);
               break;
             }
             if ((j_claims = r_jwt_get_full_claims_json_t(dpop_jwt)) == NULL) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "verify_dpop_proof - Error r_jwt_get_full_claims_json_t");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "verify_dpop_proof - Error r_jwt_get_full_claims_json_t");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR);
               break;
             }
             if (json_object_get(j_header, "x5c") != NULL || json_object_get(j_header, "x5u") != NULL) {
-              y_log_message(Y_LOG_LEVEL_DEBUG, "verify_dpop_proof - Invalid header, x5c or x5u present");
+              ulfius_log_message(ULFIUS_LOG_DEBUG, "verify_dpop_proof - Invalid header, x5c or x5u present");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR_INVALID_TOKEN);
               break;
             }
             if (r_jwk_init(&jwk_header) != RHN_OK) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "verify_dpop_proof - Error r_jwk_init");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "verify_dpop_proof - Error r_jwk_init");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR);
               break;
             }
             if (r_jwk_import_from_json_t(jwk_header, json_object_get(j_header, "jwk")) != RHN_OK) {
-              y_log_message(Y_LOG_LEVEL_DEBUG, "verify_dpop_proof - Invalid jwk property in header");
+              ulfius_log_message(ULFIUS_LOG_DEBUG, "verify_dpop_proof - Invalid jwk property in header");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR_INVALID_TOKEN);
               break;
             }
             if (!o_strlen(r_jwt_get_claim_str_value(dpop_jwt, "jti"))) {
-              y_log_message(Y_LOG_LEVEL_DEBUG, "verify_dpop_proof - Invalid jti");
+              ulfius_log_message(ULFIUS_LOG_DEBUG, "verify_dpop_proof - Invalid jti");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR_INVALID_TOKEN);
               break;
             }
             if (0 != o_strcmp(htm, r_jwt_get_claim_str_value(dpop_jwt, "htm"))) {
-              y_log_message(Y_LOG_LEVEL_DEBUG, "verify_dpop_proof - Invalid htm");
+              ulfius_log_message(ULFIUS_LOG_DEBUG, "verify_dpop_proof - Invalid htm");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR_INVALID_TOKEN);
               break;
             }
             if (0 != o_strcmp(htu, r_jwt_get_claim_str_value(dpop_jwt, "htu"))) {
-              y_log_message(Y_LOG_LEVEL_DEBUG, "verify_dpop_proof - Invalid htu");
+              ulfius_log_message(ULFIUS_LOG_DEBUG, "verify_dpop_proof - Invalid htu");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR_INVALID_TOKEN);
               break;
             }
             time(&now);
             if ((time_t)r_jwt_get_claim_int_value(dpop_jwt, "iat") > now || ((time_t)r_jwt_get_claim_int_value(dpop_jwt, "iat"))+max_iat < now) {
-              y_log_message(Y_LOG_LEVEL_DEBUG, "verify_dpop_proof - Invalid iat");
+              ulfius_log_message(ULFIUS_LOG_DEBUG, "verify_dpop_proof - Invalid iat");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR_INVALID_TOKEN);
               break;
             }
             if ((jkt_from_token = r_jwk_thumbprint(jwk_header, R_JWK_THUMB_SHA256, R_FLAG_IGNORE_REMOTE)) == NULL) {
-              y_log_message(Y_LOG_LEVEL_ERROR, "verify_dpop_proof - Error r_jwk_thumbprint");
+              ulfius_log_message(ULFIUS_LOG_ERROR, "verify_dpop_proof - Error r_jwk_thumbprint");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR);
               break;
             }
             if (0 != o_strcmp(jkt, jkt_from_token)) {
-              y_log_message(Y_LOG_LEVEL_DEBUG, "verify_dpop_proof - jkt value doesn't match");
+              ulfius_log_message(ULFIUS_LOG_DEBUG, "verify_dpop_proof - jkt value doesn't match");
               j_return = json_pack("{si}", "result", G_TOKEN_ERROR_INVALID_TOKEN);
               break;
             }
@@ -347,15 +347,15 @@ json_t * verify_dpop_proof(const struct _u_request * request, const char * htm, 
           r_jwk_free(jwk_header);
           o_free(jkt_from_token);
         } else {
-          y_log_message(Y_LOG_LEVEL_DEBUG, "verify_dpop_proof - Invalid signature");
+          ulfius_log_message(ULFIUS_LOG_DEBUG, "verify_dpop_proof - Invalid signature");
           j_return = json_pack("{si}", "result", G_TOKEN_ERROR_INVALID_REQUEST);
         }
       } else {
-        y_log_message(Y_LOG_LEVEL_DEBUG, "verify_dpop_proof - Invalid DPoP token");
+        ulfius_log_message(ULFIUS_LOG_DEBUG, "verify_dpop_proof - Invalid DPoP token");
         j_return = json_pack("{si}", "result", G_TOKEN_ERROR_INVALID_TOKEN);
       }
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "verify_dpop_proof - Error r_jwt_init");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "verify_dpop_proof - Error r_jwt_init");
       j_return = json_pack("{si}", "result", G_TOKEN_ERROR_INTERNAL);
     }
     r_jwt_free(dpop_jwt);

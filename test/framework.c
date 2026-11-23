@@ -4658,13 +4658,13 @@ static void handle_smtp (struct smtp_manager * manager) {
     select(manager->sockfd+1, &sockset, NULL, NULL, &tv);
 
     if (!FD_ISSET(manager->sockfd, &sockset)) {
-      y_log_message(Y_LOG_LEVEL_DEBUG, "%d: Socket timed out", manager->sockfd);
+      ulfius_log_message(ULFIUS_LOG_DEBUG, "%d: Socket timed out", manager->sockfd);
       break;
     }
 
     int buffer_left = BUF_SIZE - buffer_offset - 1;
     if (buffer_left == 0) {
-      y_log_message(Y_LOG_LEVEL_DEBUG, "%d: Command line too long", manager->sockfd);
+      ulfius_log_message(ULFIUS_LOG_DEBUG, "%d: Command line too long", manager->sockfd);
       sprintf(bufferout, "500 Too long\r\n");
       send(manager->sockfd, bufferout, o_strlen(bufferout), 0);
       //manager->mail_data = mstrcatf(manager->mail_data, bufferout);
@@ -4674,11 +4674,11 @@ static void handle_smtp (struct smtp_manager * manager) {
 
     rc = recv(manager->sockfd, buffer + buffer_offset, buffer_left, 0);
     if (rc == 0) {
-      y_log_message(Y_LOG_LEVEL_DEBUG, "%d: Remote host closed socket", manager->sockfd);
+      ulfius_log_message(ULFIUS_LOG_DEBUG, "%d: Remote host closed socket", manager->sockfd);
       break;
     }
     if (rc == -1) {
-      y_log_message(Y_LOG_LEVEL_DEBUG, "%d: Error on socket", manager->sockfd);
+      ulfius_log_message(ULFIUS_LOG_DEBUG, "%d: Error on socket", manager->sockfd);
       break;
     }
 
@@ -4693,7 +4693,7 @@ static void handle_smtp (struct smtp_manager * manager) {
 processline:
     eol = strstr(buffer, "\r\n");
     if (eol == NULL) {
-      y_log_message(Y_LOG_LEVEL_DEBUG, "%d: Haven't found EOL yet", manager->sockfd);
+      ulfius_log_message(ULFIUS_LOG_DEBUG, "%d: Haven't found EOL yet", manager->sockfd);
       continue;
     }
 
@@ -4795,19 +4795,19 @@ static void * simple_smtp(void * args) {
           if ((manager->sockfd = accept(server_fd, (struct sockaddr *)&address, (socklen_t*)&addrlen)) >= 0) {
             handle_smtp(manager);
           } else {
-            y_log_message(Y_LOG_LEVEL_ERROR, "simple_smtp - Error accept");
+            ulfius_log_message(ULFIUS_LOG_ERROR, "simple_smtp - Error accept");
           }
         } else {
-          y_log_message(Y_LOG_LEVEL_ERROR, "simple_smtp - Error listen");
+          ulfius_log_message(ULFIUS_LOG_ERROR, "simple_smtp - Error listen");
         }
       } else {
-        y_log_message(Y_LOG_LEVEL_ERROR, "simple_smtp - Error bind");
+        ulfius_log_message(ULFIUS_LOG_ERROR, "simple_smtp - Error bind");
       }
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "simple_smtp - Error setsockopt");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "simple_smtp - Error setsockopt");
     }
   } else {
-    y_log_message(Y_LOG_LEVEL_ERROR, "simple_smtp - Error socket");
+    ulfius_log_message(ULFIUS_LOG_ERROR, "simple_smtp - Error socket");
   }
 
   pthread_exit(NULL);
@@ -7156,7 +7156,6 @@ int main(void)
   int number_failed;
   Suite *s;
   SRunner *sr;
-  //y_init_logs("Ulfius", Y_LOG_MODE_CONSOLE, Y_LOG_LEVEL_DEBUG, NULL, "Starting Ulfius framework tests");
   ulfius_global_init();
   s = ulfius_suite();
   sr = srunner_create(s);
@@ -7173,6 +7172,5 @@ int main(void)
   pthread_mutex_destroy(&smtp_lock);
   pthread_cond_destroy(&smtp_cond);
 
-  //y_close_logs();
   return (number_failed == 0) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

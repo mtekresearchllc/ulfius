@@ -59,7 +59,6 @@ set(PROJECT_VERSION_NUMBER "${LIBRARY_VERSION_MAJOR_PAD}${LIBRARY_VERSION_MINOR_
 set(LIBRARY_VERSION "${LIBRARY_VERSION_MAJOR}.${LIBRARY_VERSION_MINOR}.${LIBRARY_VERSION_PATCH}")
 set(LIBRARY_SOVERSION "${LIBRARY_VERSION_MAJOR}.${LIBRARY_VERSION_MINOR}")
 set(ORCANIA_VERSION_REQUIRED "2.3.3")
-set(YDER_VERSION_REQUIRED "1.4.20")
 set(JANSSON_VERSION_REQUIRED "2.1")
 
 # cmake modules
@@ -99,13 +98,15 @@ set(LIB_SRC
     ${INC_DIR}/ulfius.h
     ${INC_DIR}/u_private.h
     ${INC_DIR}/yuarel.h
+    ${INC_DIR}/u_logging.h
     ${SRC_DIR}/u_map.c
     ${SRC_DIR}/u_request.c
     ${SRC_DIR}/u_response.c
     ${SRC_DIR}/u_send_request.c
     ${SRC_DIR}/u_websocket.c
     ${SRC_DIR}/yuarel.c
-    ${SRC_DIR}/ulfius.c)
+    ${SRC_DIR}/ulfius.c
+    ${SRC_DIR}/u_logging.c)
 
 # pthread libraries
 find_package (Threads)
@@ -194,7 +195,7 @@ if (NOT BUILD_STATIC AND NOT BUILD_SHARED)
 endif ()
 
 # TO MY FUTURE SELF
-# The following 2 blocks are put BEFORE searching for Orcania and Yder by design
+# The following 2 blocks are put BEFORE searching for Orcania by design
 # Otherwise it will lead to cmake errors
 # DON'T MOVE IT BELOW PLEASE!
 
@@ -210,7 +211,7 @@ if (BUILD_STATIC)
     target_link_libraries(ulfius_static PUBLIC ${ULFIUS_LIBS})
     target_compile_definitions(ulfius_static PUBLIC O_STATIC_LIBRARY)
     set_target_properties(ulfius_static PROPERTIES
-            PUBLIC_HEADER "${INC_DIR}/ulfius.h;${PROJECT_BINARY_DIR}/ulfius-cfg.h"
+            PUBLIC_HEADER "${INC_DIR}/ulfius.h;${INC_DIR}/u_logging.h;${PROJECT_BINARY_DIR}/ulfius-cfg.h"
             OUTPUT_NAME ulfius
             EXPORT_NAME Ulfius-static)
     if (MSVC)
@@ -234,7 +235,7 @@ if (BUILD_SHARED)
         PUBLIC "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>")
     target_link_libraries(ulfius PUBLIC ${ULFIUS_LIBS})
     set_target_properties(ulfius PROPERTIES
-            PUBLIC_HEADER "${INC_DIR}/ulfius.h;${PROJECT_BINARY_DIR}/ulfius-cfg.h"
+            PUBLIC_HEADER "${INC_DIR}/ulfius.h;${INC_DIR}/u_logging.h;${PROJECT_BINARY_DIR}/ulfius-cfg.h"
             VERSION "${LIBRARY_VERSION}"
             SOVERSION "${LIBRARY_SOVERSION}"
             WINDOWS_EXPORT_ALL_SYMBOLS TRUE
@@ -290,31 +291,6 @@ if (BUILD_STATIC)
     endif()
 endif ()
 
-option(WITH_YDER "Use Yder library to log messages" ON)
-
-if (WITH_YDER)
-    find_package(Yder ${YDER_VERSION_REQUIRED} REQUIRED)
-    if ("${YDER_VERSION_STRING}" VERSION_GREATER_EQUAL "${YDER_VERSION_REQUIRED}")
-        message(STATUS "Yder found: ${YDER_VERSION_STRING}")
-    else ()
-        message( FATAL_ERROR "Yder version required: ${YDER_VERSION_REQUIRED} - version installed: ${YDER_VERSION_STRING}")
-    endif ()
-
-    if (BUILD_SHARED)
-        target_link_libraries(ulfius PUBLIC $<TARGET_NAME:Yder::Yder>)
-    endif ()
-    if (BUILD_STATIC)
-        if(TARGET Yder::Yder-static)
-            target_link_libraries(ulfius_static PUBLIC $<TARGET_NAME:Yder::Yder-static>)
-        else()
-            target_link_libraries(ulfius_static PUBLIC $<TARGET_NAME:Yder::Yder>)
-        endif()
-    endif ()
-    set(U_DISABLE_YDER OFF)
-else ()
-    set(U_DISABLE_YDER ON)
-endif ()
-
 # build uwsc
 
 cmake_dependent_option(BUILD_UWSC "Build uwsc application." ON "WITH_WEBSOCKET" OFF)
@@ -330,7 +306,7 @@ if (BUILD_UWSC)
 endif ()
 
 set(PKGCONF_REQ "")
-set(PKGCONF_REQ_PRIVATE "liborcania, libyder")
+set(PKGCONF_REQ_PRIVATE "liborcania")
 if (WITH_CURL)
   set (PKGCONF_REQ_PRIVATE "${PKGCONF_REQ_PRIVATE}, libcurl")
 endif ()
@@ -381,7 +357,7 @@ if (BUILD_ULFIUS_TESTING)
             list(APPEND TEST_LIBS Subunit::Subunit)
         endif ()
         
-        set(TESTS core u_map framework example_callbacks)
+        set(TESTS core u_map framework example_callbacks logging logging_faults)
         if (WITH_WEBSOCKET)
             set(TESTS ${TESTS} websocket websocket_write_retry)
         endif ()
@@ -392,12 +368,12 @@ if (BUILD_ULFIUS_TESTING)
                 @ONLY)
     
         foreach (t ${TESTS})
-            add_executable(${t} EXCLUDE_FROM_ALL ${TST_DIR}/${t}.c
+            add_executable(${t} EXCLUDE_FROM_ALL ${CMAKE_CURRENT_SOURCE_DIR}/example_programs/u_example.c ${TST_DIR}/${t}.c
                                                  ${EXAMPLE_CALLBACK_COMPRESSION_DIR}/http_compression_callback.c
                                                  ${EXAMPLE_CALLBACK_COMPRESSION_DIR}/http_compression_callback.h
                                                  ${EXAMPLE_CALLBACK_STATIC_FILE_DIR}/static_compressed_inmemory_website_callback.c
                                                  ${EXAMPLE_CALLBACK_STATIC_FILE_DIR}/static_compressed_inmemory_website_callback.h )
-            target_include_directories(${t} PRIVATE ${TST_DIR} ${EXAMPLE_CALLBACK_COMPRESSION_DIR} ${EXAMPLE_CALLBACK_STATIC_FILE_DIR})
+            target_include_directories(${t} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/example_programs/include ${TST_DIR} ${EXAMPLE_CALLBACK_COMPRESSION_DIR} ${EXAMPLE_CALLBACK_STATIC_FILE_DIR})
             target_link_libraries(${t} PRIVATE ${TEST_LIBS})
             add_test(NAME ${t}
                      WORKING_DIRECTORY ${TST_DIR}
@@ -539,7 +515,7 @@ if (BUILD_DEB)
     endif ()
     set(CPACK_DEBIAN_PACKAGE_DESCRIPTION ${PROJECT_DESCRIPTION})
     set(CPACK_DEBIAN_PACKAGE_HOMEPAGE "https://mtekresearchllc.github.io/ulfius/")
-    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.4), liborcania (>= ${ORCANIA_VERSION_REQUIRED}), libyder (>= ${YDER_VERSION_REQUIRED})")
+    set(CPACK_DEBIAN_PACKAGE_DEPENDS "libc6 (>= 2.4), liborcania (>= ${ORCANIA_VERSION_REQUIRED})")
     if (WITH_CURL)
         set(CPACK_DEBIAN_PACKAGE_DEPENDS "${CPACK_DEBIAN_PACKAGE_DEPENDS}, libcurl4-gnutls-dev|libcurl4-nss-dev|libcurl4-openssl-dev|libcurl3-gnutls|libcurl3-nss|libcurl4 (>= 7.16.2)")
     endif ()
@@ -573,7 +549,6 @@ message(STATUS "Websocket support:              ${WITH_WEBSOCKET}")
 message(STATUS "Websocket message list support: ${WITH_WEBSOCKET_MESSAGE_LIST}")
 message(STATUS "Outgoing requests support:      ${WITH_CURL}")
 message(STATUS "Jansson library support:        ${WITH_JANSSON}")
-message(STATUS "Yder support:                   ${WITH_YDER}")
 message(STATUS "Build uwsc application:         ${BUILD_UWSC}")
 message(STATUS "Build shared library:           ${BUILD_SHARED}")
 message(STATUS "Build static library:           ${BUILD_STATIC}")

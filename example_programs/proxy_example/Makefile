@@ -17,11 +17,8 @@ ULFIUS_LOCATION=../../src
 ULFIUS_INCLUDE=../../include
 EXAMPLE_INCLUDE=../include
 CFLAGS+=-c -Wall -I$(ULFIUS_INCLUDE) -I$(EXAMPLE_INCLUDE) -D_REENTRANT $(ADDITIONALFLAGS) $(CPPFLAGS)
-LIBS=-lc -lorcania -lulfius -ljansson -L$(ULFIUS_LOCATION)
+LIBS=u_example.o -lc -lorcania -lulfius -ljansson -L$(ULFIUS_LOCATION)
 
-ifndef YDERFLAG
-LIBS+= -lyder
-endif
 
 all: proxy
 
@@ -38,8 +35,11 @@ debug: proxy
 proxy.o: proxy.c
 	$(CC) $(CFLAGS) proxy.c -DDEBUG -g -O0
 
-proxy: ../../src/libulfius.so proxy.o
+proxy: ../../src/libulfius.so proxy.o u_example.o
 	$(CC) -o proxy proxy.o $(LIBS)
 
 test: proxy
 	LD_LIBRARY_PATH=$(ULFIUS_LOCATION):${LD_LIBRARY_PATH} ./proxy
+
+u_example.o: ../u_example.c ../include/u_example.h
+	$(CC) $(CFLAGS) ../u_example.c -o $@

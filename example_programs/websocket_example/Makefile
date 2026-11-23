@@ -19,13 +19,10 @@ EXAMPLE_INCLUDE=../include
 CFLAGS+=-c -Wall -I$(ULFIUS_INCLUDE) -I$(EXAMPLE_INCLUDE) -I$(STATIC_FILE_LOCATION) -I$(STATIC_COMPRESSED_INMEMORY_WEBSITE) $(ADDITIONALFLAGS) $(CPPFLAGS)
 STATIC_FILE_LOCATION=../../example_callbacks/static_file
 STATIC_COMPRESSED_INMEMORY_WEBSITE=../../example_callbacks/static_compressed_inmemory_website
-LIBS=-lc -lz -lpthread -ljansson -lulfius -lorcania -L$(ULFIUS_LOCATION)
+LIBS=u_example.o -lc -lz -lpthread -ljansson -lulfius -lorcania -L$(ULFIUS_LOCATION)
 LIBULFIUS=../../src/libulfius.so
 #SECUREFLAG=-https test.key test.pem
 
-ifndef YDERFLAG
-LIBS+= -lyder
-endif
 
 all: websocket_server websocket_client
 
@@ -45,11 +42,11 @@ static_file_callback.o: $(STATIC_FILE_LOCATION)/static_file_callback.c
 static_compressed_inmemory_website_callback.o: $(STATIC_COMPRESSED_INMEMORY_WEBSITE)/static_compressed_inmemory_website_callback.c
 	$(CC) $(CFLAGS) $(STATIC_COMPRESSED_INMEMORY_WEBSITE)/static_compressed_inmemory_website_callback.c
 
-websocket_server: $(LIBULFIUS) static_compressed_inmemory_website_callback.o websocket_server.c
+websocket_server: $(LIBULFIUS) static_compressed_inmemory_website_callback.o websocket_server.c u_example.o
 	$(CC) $(CFLAGS) websocket_server.c
 	$(CC) -o websocket_server websocket_server.o static_compressed_inmemory_website_callback.o $(LIBS)
 
-websocket_client: $(LIBULFIUS) websocket_client.c
+websocket_client: $(LIBULFIUS) websocket_client.c u_example.o
 	$(CC) $(CFLAGS) websocket_client.c 
 	$(CC) -o websocket_client websocket_client.o $(LIBS)
 
@@ -64,3 +61,6 @@ memcheck_server: websocket_server
 
 memcheck_client: websocket_client
 	LD_LIBRARY_PATH=../../src valgrind --tool=memcheck --leak-check=full --show-leak-kinds=all ./websocket_client $(SECUREFLAG) 2>valgrind_client.txt
+
+u_example.o: ../u_example.c ../include/u_example.h
+	$(CC) $(CFLAGS) ../u_example.c -o $@

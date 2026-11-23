@@ -20,7 +20,7 @@ Options available:
 
 ```shell
 -o --output-log-file=PATH
-	Print yder log messages in a file
+	Print Ulfius log messages in a file
 -x --add-header=HEADER
 	Add the specified header of the form 'key:value'
 -b --send-binary-file=PATH

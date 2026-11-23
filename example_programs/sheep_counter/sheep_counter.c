@@ -16,6 +16,7 @@
 #include <jansson.h>
 #include <string.h>
 #include <ulfius.h>
+#include <inttypes.h>
 
 #include "http_compression_callback.h"
 #include "static_compressed_inmemory_website_callback.h"
@@ -135,8 +136,8 @@ static int callback_upload_file (const struct _u_request * request, struct _u_re
   (void)(response);
   (void)(user_data);
 
-  y_log_message(Y_LOG_LEVEL_DEBUG, "Post parameters:\n%s", post_params);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "URL parameters:\n%s", url_params);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "Post parameters:\n%s", post_params);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "URL parameters:\n%s", url_params);
   o_free(url_params);
   o_free(headers);
   o_free(cookies);
@@ -152,8 +153,8 @@ static int callback_form_submit (const struct _u_request * request, struct _u_re
   char * post_params = print_map(request->map_post_body),
        * url_params = print_map(request->map_url);
   (void)(user_data);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "Post parameters:\n%s", post_params);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "URL parameters:\n%s", url_params);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "Post parameters:\n%s", post_params);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "URL parameters:\n%s", url_params);
   o_free(post_params);
   o_free(url_params);
   ulfius_set_string_body_response(response, 200, "Form submitted");
@@ -176,7 +177,7 @@ static int file_upload_callback (const struct _u_request * request,
   (void)(content_type);
   (void)(transfer_encoding);
   (void)(data);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "Got from file '%s' of the key '%s', offset %llu, size %zu, cls is '%s'", filename, key, off, size, cls);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "Got from file '%s' of the key '%s', offset %" PRIu64 ", size %zu, cls is '%s'", filename, key, off, size, (const char *)cls);
   return U_OK;
 }
 
@@ -191,7 +192,8 @@ int main (void) {
   // Initialize the instance
   struct _u_instance instance;
   
-  y_init_logs("sheep_counter", Y_LOG_MODE_CONSOLE, Y_LOG_LEVEL_DEBUG, NULL, "Starting sheep_counter");
+  ulfius_set_log_callback(ULFIUS_LOG_DEBUG, u_example_log_callback, stdout);
+  ulfius_log_message(ULFIUS_LOG_INFO, "%s", "Starting sheep_counter");
   
   if (u_init_compressed_inmemory_website_config(&file_config) == U_OK) {
     u_map_put(&file_config.mime_types, ".html", "text/html");
@@ -210,7 +212,7 @@ int main (void) {
     file_config.url_prefix = FILE_PREFIX;
 
     if (ulfius_init_instance(&instance, PORT, NULL, NULL) != U_OK) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Error ulfius_init_instance, abort");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Error ulfius_init_instance, abort");
       return(1);
     }
     
@@ -218,7 +220,7 @@ int main (void) {
     instance.max_post_param_size = 16*1024;
     
     if (ulfius_set_upload_file_callback_function(&instance, &file_upload_callback, "my cls") != U_OK) {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Error ulfius_set_upload_file_callback_function");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Error ulfius_set_upload_file_callback_function");
     }
     
     // Endpoint list declaration
@@ -249,7 +251,7 @@ int main (void) {
     free(file_config.files_path);
   }
   
-  y_close_logs();
+  ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL);
   
   return 0;
 }

@@ -87,7 +87,8 @@ int main (void) {
   struct _u_response response;
   int res;
   
-  y_init_logs("Ulfius request", Y_LOG_MODE_CONSOLE, Y_LOG_LEVEL_DEBUG, NULL, "Starting Ulfius framework request tests");
+  ulfius_set_log_callback(ULFIUS_LOG_DEBUG, u_example_log_callback, stdout);
+  ulfius_log_message(ULFIUS_LOG_INFO, "%s", "Starting Ulfius framework request tests");
   json_object_set_new(json_body, "param1", json_string("one"));
   json_object_set_new(json_body, "param2", json_string("two"));
   
@@ -219,7 +220,7 @@ int main (void) {
   ulfius_clean_request(&req_list[6]);
   ulfius_clean_request(&req_list[7]);
   ulfius_clean_request(&req_list[8]);
-  y_close_logs();
+  ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL);
   
   return 0;
 }

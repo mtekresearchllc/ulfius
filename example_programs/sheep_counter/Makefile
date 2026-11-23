@@ -19,11 +19,8 @@ EXAMPLE_INCLUDE=../include
 STATIC_COMPRESSED_INMEMORY_WEBSITE=../../example_callbacks/static_compressed_inmemory_website
 HTTP_COMRESSION=../../example_callbacks/http_compression
 CFLAGS+=-c -Wall -I$(ULFIUS_INCLUDE) -I$(EXAMPLE_INCLUDE) -I$(STATIC_COMPRESSED_INMEMORY_WEBSITE) -I$(HTTP_COMRESSION) -D_REENTRANT $(ADDITIONALFLAGS) $(CPPFLAGS)
-LIBS=-lc -lz -lpthread -lulfius -lorcania -ljansson -L$(ULFIUS_LOCATION)
+LIBS=u_example.o -lc -lz -lpthread -lulfius -lorcania -ljansson -L$(ULFIUS_LOCATION)
 
-ifndef YDERFLAG
-LIBS+= -lyder
-endif
 
 all: sheep_counter
 
@@ -46,8 +43,11 @@ http_compression_callback.o: $(HTTP_COMRESSION)/http_compression_callback.c
 sheep_counter.o: sheep_counter.c
 	$(CC) $(CFLAGS) sheep_counter.c -DDEBUG -g -O0
 
-sheep_counter: ../../src/libulfius.so sheep_counter.o static_compressed_inmemory_website_callback.o http_compression_callback.o
+sheep_counter: ../../src/libulfius.so sheep_counter.o static_compressed_inmemory_website_callback.o http_compression_callback.o u_example.o
 	$(CC) -o sheep_counter sheep_counter.o static_compressed_inmemory_website_callback.o http_compression_callback.o $(LIBS)
 
 test: sheep_counter
 	LD_LIBRARY_PATH=$(ULFIUS_LOCATION):${LD_LIBRARY_PATH} ./sheep_counter
+
+u_example.o: ../u_example.c ../include/u_example.h
+	$(CC) $(CFLAGS) ../u_example.c -o $@

@@ -35,7 +35,7 @@ int main (void) {
   struct _u_instance instance;
   
   if (ulfius_init_instance(&instance, PORT, NULL, NULL) != U_OK) {
-    y_log_message(Y_LOG_LEVEL_ERROR, "Error ulfius_init_instance, abort");
+    ulfius_log_message(ULFIUS_LOG_ERROR, "Error ulfius_init_instance, abort");
     return(1);
   }
   

@@ -61,7 +61,8 @@ int main (int argc, char **argv) {
   int res;
   struct _u_request req_list[6];
   
-  y_init_logs("auth_client", Y_LOG_MODE_CONSOLE, Y_LOG_LEVEL_DEBUG, NULL, "logs start");
+  ulfius_set_log_callback(ULFIUS_LOG_DEBUG, u_example_log_callback, stdout);
+  ulfius_log_message(ULFIUS_LOG_INFO, "%s", "logs start");
   
 #ifndef U_DISABLE_GNUTLS
   if (argc <= 2) {
@@ -208,7 +209,7 @@ int main (int argc, char **argv) {
   }
 #endif
   
-  y_close_logs();
+  ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL);
   return 0;
 }
 #endif

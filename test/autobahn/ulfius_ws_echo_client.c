@@ -1,3 +1,4 @@
+#include "u_example.h"
 /* Public domain, no copyright. Use at your own risk. */
 
 #include <ulfius.h>
@@ -8,9 +9,9 @@ static void websocket_echo_message_callback (const struct _u_request * request,
                                              struct _websocket_manager * websocket_manager,
                                              const struct _websocket_message * last_message,
                                              void * websocket_incoming_message_user_data) {
-  //y_log_message(Y_LOG_LEVEL_DEBUG, "Got message opcode %d, %zu", last_message->opcode, last_message->data_len);
+  //ulfius_log_message(ULFIUS_LOG_DEBUG, "Got message opcode %d, %zu", last_message->opcode, last_message->data_len);
   if (ulfius_websocket_send_message(websocket_manager, last_message->opcode, last_message->data_len, last_message->data) != U_OK) {
-    y_log_message(Y_LOG_LEVEL_ERROR, "Error send message from incoming");
+    ulfius_log_message(ULFIUS_LOG_ERROR, "Error send message from incoming");
   }
 }
 
@@ -22,7 +23,16 @@ int main(int argc, char ** argv) {
   const char * url_pattern = (argc>2&&0==o_strcmp("-https", argv[2]))?"wss://localhost:" PORT "/runCase?case=%s&agent=ulfius":"ws://localhost:" PORT "/runCase?case=%s&agent=ulfius", * extensions;
   int test_case = atoi(argv[1]);
 
-  y_init_logs("autobahn client tester", Y_LOG_MODE_FILE, Y_LOG_LEVEL_DEBUG, "ulfius_ws_echo_client.log", "Starting websocket client echo for autobahn testsuite");
+  FILE *log_file = fopen("ulfius_ws_echo_client.log", "a");
+  if (log_file == NULL) {
+    perror("opening log file");
+    return EXIT_FAILURE;
+  }
+  if (ulfius_set_log_callback(ULFIUS_LOG_DEBUG, u_example_log_callback, log_file) != U_OK) {
+    fclose(log_file);
+    return EXIT_FAILURE;
+  }
+  ulfius_log_message(ULFIUS_LOG_INFO, "%s", "Starting websocket client echo for autobahn testsuite");
 
   ulfius_init_request(&request);
   request.check_server_certificate = 0;
@@ -50,22 +60,23 @@ int main(int argc, char ** argv) {
     websocket_client_handler.response = NULL;
     ulfius_add_websocket_client_deflate_extension(&websocket_client_handler);
     ulfius_init_response(&response);
-    y_log_message(Y_LOG_LEVEL_INFO, "Test case %s started", argv[1]);
+    ulfius_log_message(ULFIUS_LOG_INFO, "Test case %s started", argv[1]);
     if (ulfius_open_websocket_client_connection(&request, NULL, NULL, &websocket_echo_message_callback, NULL, NULL, NULL, &websocket_client_handler, &response) == U_OK) {
       if (ulfius_websocket_client_connection_wait_close(&websocket_client_handler, 0) == U_WEBSOCKET_STATUS_ERROR) {
-        y_log_message(Y_LOG_LEVEL_ERROR, "Test case %s error", argv[1]);
+        ulfius_log_message(ULFIUS_LOG_ERROR, "Test case %s error", argv[1]);
       } else {
-        y_log_message(Y_LOG_LEVEL_INFO, "Test case %s closed", argv[1]);
+        ulfius_log_message(ULFIUS_LOG_INFO, "Test case %s closed", argv[1]);
       }
     } else {
-      y_log_message(Y_LOG_LEVEL_ERROR, "Error connecting to websocket");
+      ulfius_log_message(ULFIUS_LOG_ERROR, "Error connecting to websocket");
     }
     ulfius_clean_response(&response);
   } else {
-    y_log_message(Y_LOG_LEVEL_ERROR, "Error setting request parameters");
+    ulfius_log_message(ULFIUS_LOG_ERROR, "Error setting request parameters");
   }
   o_free(url);
   ulfius_clean_request(&request);
 
-  y_close_logs();
+  ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL);
+  fclose(log_file);
 }

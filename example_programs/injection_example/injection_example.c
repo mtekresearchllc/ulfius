@@ -41,10 +41,11 @@ int main (void) {
   // Initialize the instance
   struct _u_instance instance;
   
-  y_init_logs("injection_example", Y_LOG_MODE_CONSOLE, Y_LOG_LEVEL_DEBUG, NULL, "Starting injection_example");
+  ulfius_set_log_callback(ULFIUS_LOG_DEBUG, u_example_log_callback, stdout);
+  ulfius_log_message(ULFIUS_LOG_INFO, "%s", "Starting injection_example");
   
   if (ulfius_init_instance(&instance, PORT, NULL, NULL) != U_OK) {
-    y_log_message(Y_LOG_LEVEL_ERROR, "Error ulfius_init_instance, abort");
+    ulfius_log_message(ULFIUS_LOG_ERROR, "Error ulfius_init_instance, abort");
     return(1);
   }
   
@@ -55,29 +56,29 @@ int main (void) {
   
   // Start the framework
   if (ulfius_start_framework(&instance) == U_OK) {
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Start framework on port %d", instance.port);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "Start framework on port %d", instance.port);
     
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Press <enter> to inject %s/fourth endpoint", PREFIX);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "Press <enter> to inject %s/fourth endpoint", PREFIX);
     getchar();
     ulfius_add_endpoint_by_val(&instance, "GET", PREFIX, "/fourth", 1, &callback_fourth, NULL);
     
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Press <enter> to inject %s/fifth endpoint", PREFIX);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "Press <enter> to inject %s/fifth endpoint", PREFIX);
     getchar();
     ulfius_add_endpoint_by_val(&instance, "GET", PREFIX, "/fifth", 1, &callback_fifth, NULL);
     
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Press <enter> to remove %s/fourth endpoint", PREFIX);
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "Press <enter> to remove %s/fourth endpoint", PREFIX);
     getchar();
     ulfius_remove_endpoint_by_val(&instance, "GET", PREFIX, "/fourth");
     
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Press <enter> to quit the application");
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "Press <enter> to quit the application");
     // Wait for the user to press <enter> on the console to quit the application
     getchar();
   } else {
-    y_log_message(Y_LOG_LEVEL_DEBUG, "Error starting framework");
+    ulfius_log_message(ULFIUS_LOG_DEBUG, "Error starting framework");
   }
-  y_log_message(Y_LOG_LEVEL_DEBUG, "End framework");
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "End framework");
   
-  y_close_logs();
+  ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL);
   
   ulfius_stop_framework(&instance);
   ulfius_clean_instance(&instance);

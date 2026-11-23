@@ -71,9 +71,9 @@ static char * read_file(const char * filename) {
  * Auth function for basic authentication
  */
 int callback_auth_basic_body (const struct _u_request * request, struct _u_response * response, void * user_data) {
-  y_log_message(Y_LOG_LEVEL_DEBUG, "basic auth user: %s", request->auth_basic_user);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "basic auth password: %s", request->auth_basic_password);
-  y_log_message(Y_LOG_LEVEL_DEBUG, "basic auth param: %s", (char *)user_data);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "basic auth user: %s", request->auth_basic_user);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "basic auth password: %s", request->auth_basic_password);
+  ulfius_log_message(ULFIUS_LOG_DEBUG, "basic auth param: %s", (char *)user_data);
   if (request->auth_basic_user != NULL && request->auth_basic_password != NULL && 
       0 == o_strcmp(request->auth_basic_user, USER) && 0 == o_strcmp(request->auth_basic_password, PASSWORD)) {
     return U_CALLBACK_CONTINUE;
@@ -112,8 +112,8 @@ int callback_auth_client_cert (const struct _u_request * request, struct _u_resp
       gnutls_x509_crt_get_issuer_dn(request->client_cert, issuer_dn, &libuf);
       dn[lbuf] = '\0';
       issuer_dn[libuf] = '\0';
-      y_log_message(Y_LOG_LEVEL_DEBUG, "dn of the client: %s", dn);
-      y_log_message(Y_LOG_LEVEL_DEBUG, "dn of the issuer: %s", issuer_dn);
+      ulfius_log_message(ULFIUS_LOG_DEBUG, "dn of the client: %s", dn);
+      ulfius_log_message(ULFIUS_LOG_DEBUG, "dn of the issuer: %s", issuer_dn);
       response_message = msprintf("client dn: '%s', ussued by: '%s'", dn, issuer_dn);
       ulfius_set_string_body_response(response, 200, response_message);
       o_free(response_message);
@@ -131,7 +131,8 @@ int main (int argc, char **argv) {
   // Initialize the instance
   struct _u_instance instance;
   
-  y_init_logs("auth_server", Y_LOG_MODE_CONSOLE, Y_LOG_LEVEL_DEBUG, NULL, "logs start");
+  ulfius_set_log_callback(ULFIUS_LOG_DEBUG, u_example_log_callback, stdout);
+  ulfius_log_message(ULFIUS_LOG_INFO, "%s", "logs start");
   
   if (ulfius_init_instance(&instance, PORT, NULL, "auth_basic_default") != U_OK) {
     printf("Error ulfius_init_instance, abort\n");
@@ -181,7 +182,7 @@ int main (int argc, char **argv) {
   printf("End framework\n");
   ulfius_stop_framework(&instance);
   ulfius_clean_instance(&instance);
-  y_close_logs();
+  ulfius_set_log_callback(ULFIUS_LOG_NONE, NULL, NULL);
   
   return 0;
 }
